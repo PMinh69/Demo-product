@@ -320,6 +320,7 @@ function closeUpdateModal() {
 
 async function updateModal() {
   const site_id = document.getElementById("updateId").value;
+  
   const formData = {
     application_name: document.getElementById("update_application_name").value,
     url_site: document.getElementById("update_url_site").value,
@@ -344,24 +345,6 @@ async function updateModal() {
   }
   alert("Cập nhật thành công");
   fetchSite();
-  closeUpdateModal();
-}
-
-function populateTypeOptions() {
-  const selectIds = ["type", "update_type"];
-
-  selectIds.forEach((id) => {
-    const selectElement = document.getElementById(id);
-    if (selectElement) {
-      selectElement.innerHTML = "";
-      for (const [key, value] of Object.entries(siteTypes)) {
-        const option = document.createElement("option");
-        option.value = key;
-        option.textContent = value;
-        selectElement.appendChild(option);
-      }
-    }
-  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
