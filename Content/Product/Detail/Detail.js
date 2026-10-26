@@ -83,6 +83,16 @@ const siteColumns = [
   ["folder_path", "Đường dẫn thư mục"],
 ];
 
+const siteExistedColumns = [
+  ["application_name", "Tên ứng dụng"],
+  ["url_site", "URL Site"],
+  ["ip_server", "IP Server"],
+  ["type", "Loại"],
+  ["status", "Trạng thái"],
+  ["ip_server_local", "IP Server nội bộ"],
+  ["folder_path", "Đường dẫn thư mục"],
+];
+
 const siteTypes = {
   1: "Website",
   2: "WebAPI",
@@ -98,8 +108,6 @@ const siteStatuses = {
   "-1": "Stop",
 };
 
-let selectedSiteId = null;
-
 async function fetchSite() {
   const siteBody = document.getElementById("site-body");
   if (!siteBody) return;
@@ -111,7 +119,8 @@ async function fetchSite() {
   const { data: relationData, error: relationError } = await supabase
     .from("product_site")
     .select("*")
-    .eq("product_id", productId);
+    .eq("product_id", productId)
+    .order("id", { ascending: false });
 
   if (relationError) {
     console.error("Lỗi khi tải bảng trung gian product_site:", relationError);
@@ -128,15 +137,18 @@ async function fetchSite() {
   const { data: siteData, error: siteError } = await supabase
     .from("site")
     .select("*")
-    .in("id", siteIds)
-    .order("id", { ascending: false });
+    .in("id", siteIds);
 
   if (siteError) {
     console.error("Lỗi khi tải dữ liệu từ bảng site:", siteError);
     return;
   }
 
-  siteBody.innerHTML = siteData
+  const sortedSiteData = siteIds
+    .map((id) => siteData.find((site) => site.id === id))
+    .filter(Boolean);
+
+  siteBody.innerHTML = sortedSiteData
     .map((site) => {
       return `
       <tr>
@@ -185,18 +197,20 @@ async function fetchSite() {
 async function deleteModal(site_id) {
   if (!confirm("Bạn có chắc chắn muốn xóa site này không?")) return;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  await supabase.from("product_site").delete().eq("site_id", site_id);
-
-  const { siteError } = await supabase.from("site").delete().eq("id", site_id);
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("product_id");
+  const { siteError } = await supabase
+    .from("product_site")
+    .delete()
+    .eq("site_id", site_id)
+    .eq("product_id", productId);
 
   if (siteError) {
     alert("Lỗi khi xóa site:", siteError);
     alert("Xóa thất bại!");
     return;
   }
-  const siteBody = document.getElementById("site-body");
-  siteBody.innerHTML = ``;
+
   fetchSite();
   closeModal();
 
@@ -217,6 +231,136 @@ function closeModal() {
   }
 }
 
+async function openAddExistedModal() {
+  const modal = document.getElementById("addExistedModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+
+  const tbody = document.getElementById("existed-site-body");
+  if (!tbody) return;
+
+  const totalCols = siteExistedColumns.length + 1;
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("product_id");
+
+  const { data: relationData, error: relationError } = await supabase
+    .from("product_site")
+    .select("*")
+    .eq("product_id", productId);
+
+  if (relationError) {
+    console.error("Lỗi khi tải bảng trung gian product_site:", relationError);
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #ff6b6b;">Không thể tải dữ liệu liên kết.</td></tr>`;
+    return;
+  }
+
+  const existedSite = relationData.map((item) => item.site_id).filter(Boolean);
+
+  const { data: siteData, error: siteError } = await supabase
+    .from("site")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if (siteError) {
+    console.error("Lỗi khi tải dữ liệu từ bảng site:", siteError);
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #ff6b6b;">Không thể tải dữ liệu site.</td></tr>`;
+    return;
+  }
+
+  const availableSites = (siteData || []).filter(
+    (site) => !existedSite.includes(site.id),
+  );
+
+  if (availableSites.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #9ca3af;">Không có site nào khả dụng để thêm.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = availableSites
+    .map((site) => {
+      return `
+      <tr onclick="toggleCheckbox(this)" style="cursor: pointer;">
+        <td style="text-align: center;">
+          <input type="checkbox" class="existed-site-checkbox" value="${site.id}" />
+        </td>
+        ${siteExistedColumns
+          .map(([column]) => {
+            let value = site?.[column] ?? "";
+
+            if (column === "type") {
+              value = siteTypes[value] ?? value;
+            }
+
+            if (column === "status") {
+              value = siteStatuses[value] ?? value;
+            }
+
+            if (column === "url_site") {
+              return `<td><a href="${value}" target="_blank">${value}</a></td>`;
+            }
+
+            return `<td>${value}</td>`;
+          })
+          .join("")}
+      </tr>
+    `;
+    })
+    .join("");
+}
+
+function toggleCheckbox(rowElement) {
+  const checkbox = rowElement.querySelector(".existed-site-checkbox");
+  if (checkbox) {
+    checkbox.checked = !checkbox.checked;
+  }
+}
+
+function closeAddExistedModal() {
+  document.getElementById("addExistedModal").style.display = "none";
+}
+
+function toggleSelectAllExisted(masterCheckbox) {
+  const checkboxes = document.querySelectorAll(".existed-site-checkbox");
+  checkboxes.forEach((cb) => (cb.checked = masterCheckbox.checked));
+}
+
+async function addExistedSites() {
+  const checkboxes = document.querySelectorAll(
+    ".existed-site-checkbox:checked",
+  );
+  const selectedSiteIds = Array.from(checkboxes).map((cb) => cb.value);
+
+  if (selectedSiteIds.length === 0) {
+    alert("Vui lòng chọn ít nhất một site!");
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("product_id");
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const recordsToInsert = [];
+
+  for (let i = 0; i < selectedSiteIds.length; i++) {
+    recordsToInsert.push({
+      product_id: productId,
+      site_id: selectedSiteIds[i],
+    });
+  }
+
+  const { error } = await supabase.from("product_site").insert(recordsToInsert);
+
+  if (error) {
+    alert("Không thể thêm site");
+    return;
+  }
+
+  closeAddExistedModal();
+  fetchSite();
+}
+
 async function addModal() {
   const formData = {
     application_name: document.getElementById("application_name").value,
@@ -226,7 +370,9 @@ async function addModal() {
     type: document.getElementById("type").value
       ? Number(document.getElementById("type").value)
       : null,
-    status: document.getElementById("status").value,
+    status: document.getElementById("status").value
+      ? Number(document.getElementById("status").value)
+      : null,
     folder_path: document.getElementById("folder_path").value,
     note: document.getElementById("note").value,
   };
@@ -262,8 +408,6 @@ async function addModal() {
     return;
   }
 
-  const siteBody = document.getElementById("site-body");
-  siteBody.innerHTML = ``;
   fetchSite();
   closeModal();
 
@@ -320,7 +464,7 @@ function closeUpdateModal() {
 
 async function updateModal() {
   const site_id = document.getElementById("updateId").value;
-  
+
   const formData = {
     application_name: document.getElementById("update_application_name").value,
     url_site: document.getElementById("update_url_site").value,
@@ -329,22 +473,42 @@ async function updateModal() {
     type: Number(document.getElementById("update_type").value),
     status: document.getElementById("update_status").value,
     folder_path: document.getElementById("update_folder_path").value,
-    note: document.getElementById("update_note").value,
   };
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("product_id");
+
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { error } = await supabase
+  const { siteError } = await supabase
     .from("site")
-    .update(formData)
+    .update([formData])
     .eq("id", site_id)
     .select();
 
-  if (error) {
-    alert("Lỗi khi cập nhật site:", error);
+  const relationData = {
+    note: document.getElementById("update_note").value,
+  };
+
+  const { relationError } = await supabase
+    .from("product_site")
+    .update([relationData])
+    .eq("product_id", productId)
+    .eq("site_id", site_id)
+    .select();
+
+  if (siteError) {
+    alert("Lỗi khi cập nhật site:", siteError);
+    return;
+  }
+
+  if (relationError) {
+    alert("Lỗi khi cập nhật product_site:", relationError);
     return;
   }
   alert("Cập nhật thành công");
+
   fetchSite();
+  closeUpdateModal();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
