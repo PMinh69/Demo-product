@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product & Site</title>
+    <link rel="stylesheet" href="../../style.css" />
+    <link rel="stylesheet" href="Product.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ></script>
+    <script defer src="./Product.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">Brand's Name</div>
+          <div class="sidebar-menu">
+            <a href="../Dashboard/Dashboard.html"
+              ><button>
+                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                <span>Tổng quan</span>
+              </button></a
+            >
+            <a href="./Product.html"
+              ><button class="active">
+                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <span>Sản phẩm</span>
+              </button></a
+            >
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-wrapper">
+        <header class="header">
+          <div class="header-user">
+            <span>Admin Lead</span>
+            <div class="avatar">A</div>
+          </div>
+        </header>
+
+        <main id="main-content">
+          <div class="product-actions">
+            <button class="product-action product-action-add" type="button">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              <span>Thêm sản phẩm</span>
+            </button>
+            <button class="product-action product-action-update" type="button">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Cập nhập</span>
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="product-table">
+              <thead>
+                <tr>
+                  <th>tên dự án</th>
+                  <th>mô tả</th>
+                  <th>đối tác</th>
+                  <th>đội phụ trách</th>
+                  <th>thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="product-body"></tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

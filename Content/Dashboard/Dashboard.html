@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="../../style.css" />
+    <link rel="stylesheet" href="Dashboard.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <script src="Dashboard.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">Brand's Name</div>
+          <div class="sidebar-menu">
+            <a href="./Dashboard.html"
+              ><button class="active">
+                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                <span>Tổng quan</span>
+              </button></a
+            >
+            <a href="../Product/Product.html"
+              ><button>
+                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <span>Sản phẩm &amp; Site</span>
+              </button></a
+            >
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-wrapper">
+        <header class="header">
+          <div class="header-user">
+            <span>Admin Lead</span>
+            <div class="avatar">A</div>
+          </div>
+        </header>
+
+        <main id="main-content">
+          <canvas id="myChart" style="width: 100%; max-width: 600px"></canvas>
+        </main>
+      </div>
+    </div>
+    <script>
+var xValues = ["Italy", "France", "Spain", "USA", "Argentina"];
+var yValues = [55, 49, 44, 24, 15];
+var barColors = [
+  "#b91d47",
+  "#00aba9",
+  "#2b5797",
+  "#e8c3b9",
+  "#1e7145"
+];
+
+new Chart("myChart", {
+  type: "doughnut",
+  data: {
+    labels: xValues,
+    datasets: [{
+      backgroundColor: barColors,
+      data: yValues
+    }]
+  },
+  options: {
+    title: {
+      display: true,
+      text: "World Wide Wine Production 2018"
+    }
+  }
+});
+</script>
+  </body>
+</html>

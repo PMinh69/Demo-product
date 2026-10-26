@@ -1,0 +1,130 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body,
+html {
+  height: 100%;
+  background-color: #0A0E1A;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+aside.sidebar {
+  width: 200px;
+  background-color: #111828;
+  border-right: 1px solid #1f2937;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar-header {
+  padding: 20px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.sidebar-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 20px 10px;
+  flex-grow: 1;
+}
+
+.sidebar-menu a {
+  text-decoration: none;
+  color: #9ca3af;
+  
+}
+
+.sidebar-menu button {
+  color: #9ca3af;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background-color: transparent;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+}
+
+.sidebar-menu button i {
+  width: 16px;
+  text-align: center;
+}
+
+.sidebar-menu button:hover,
+.sidebar-menu button.active {
+  background-color: #1e3a5f;
+  color: #ffffff;
+}
+
+.sidebar-menu button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* MAIN WRAPPER */
+.main-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* HEADER */
+header.header {
+  height: 70px;
+  background-color: #0F1524;
+  border-bottom: 1px solid #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 30px;
+  flex-shrink: 0;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 35px;
+  height: 35px;
+  background-color: #2563eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* MAIN CONTENT */
+main#main-content {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto;
+  color: #ffffff;
+}

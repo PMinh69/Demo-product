@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danh sách Site</title>
+    <link rel="stylesheet" href="../../../style.css" />
+    <link rel="stylesheet" href="./Detail.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ></script>
+    <script defer src="./Detail.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      <aside class="sidebar">
+        <div>
+          <div class="sidebar-header">Brand's Name</div>
+          <div class="sidebar-menu">
+            <a href="../../Dashboard/Dashboard.html"
+              ><button>
+                <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+                <span>Tổng quan</span>
+              </button></a
+            >
+            <a href="../Product.html"
+              ><button class="active">
+                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <span>Sản phẩm</span>
+              </button></a
+            >
+          </div>
+        </div>
+      </aside>
+
+      <div class="main-wrapper">
+        <header class="header">
+          <div class="header-user">
+            <span>Admin Lead</span>
+            <div class="avatar">A</div>
+          </div>
+        </header>
+
+        <main id="main-content">
+          <div class="site-heading">
+            <a class="site-back-link" href="../Product.html">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span>Quay lại</span>
+            </a>
+          </div>
+          <section id="product-info"></section>
+          <div class="site-actions">
+            <button class="site-add-button" onclick="openModal()">
+              <i class="fa-solid fa-plus"></i>
+              <span>Thêm site mới</span>
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="site-table">
+              <thead>
+                <tr>
+                  <th>Tên ứng dụng</th>
+                  <th>URL Site</th>
+                  <th>IP Server</th>
+                  <th>Ghi chú</th>
+                  <th>Loại</th>
+                  <th>Trạng thái</th>
+                  <th>IP Server nội bộ</th>
+                  <th>Đường dẫn thư mục</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="site-body"></tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Add site modal -->
+    <div id="addModal" class="modal-overlay" style="display: none">
+      <div class="add-modal">
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+        <h2>Thêm Site</h2>
+        <form id="siteForm">
+          <div class="form-group">
+            <label for="application_name">Tên Ứng Dụng *</label>
+            <input
+              type="text"
+              id="application_name"
+              name="application_name"
+              placeholder="VD: PMR test..."
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="url_site">URL site</label>
+            <input
+              type="text"
+              id="url_site"
+              name="url_site"
+              placeholder="VD: https://pmr.testing.com"
+            />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="ip_server">IP Public</label>
+              <input
+                type="text"
+                id="ip_server"
+                name="ip_server"
+                placeholder="VD: 103.142.26.45"
+              />
+            </div>
+            <div class="form-group">
+              <label for="ip_server_local">IP Server Local</label>
+              <input
+                type="text"
+                id="ip_server_local"
+                name="ip_server_local"
+                placeholder="VD: 192.168.1.161"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="type">Loại Site</label>
+              <select id="type" name="type">
+                <option value="1">Website</option>
+                <option value="2">WebAPI</option>
+                <option value="3">WindowsService</option>
+                <option value="4">WorkerService</option>
+                <option value="5">DesktopApp</option>
+                <option value="6">MobileApp</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="status">Trạng Thái</label>
+              <select id="status" name="status">
+                <option value="-1">Stop</option>
+                <option value="0">Pause</option>
+                <option value="1">Run</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="folder_path">Đường dẫn thư mục</label>
+            <input
+              type="text"
+              id="folder_path"
+              name="folder_path"
+              placeholder="/var/www/html/..."
+            />
+          </div>
+          <div class="form-group">
+            <label for="note">Ghi chú</label>
+            <textarea
+              id="note"
+              name="note"
+              rows="3"
+              placeholder="VD: Đã cập nhật IP"
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="closeModal()">
+              Hủy bỏ
+            </button>
+            <button type="button" class="btn-submit" onclick="addModal()">
+              Lưu thay đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Update site modal -->
+    <div id="updateModal" class="modal-overlay" style="display: none">
+      <div class="update-modal">
+        <button class="close-btn" onclick="closeUpdateModal()">&times;</button>
+        <h2>Cập nhật Site</h2>
+        <form id="updateSiteForm">
+          <div class="form-group">
+            <label for="update_application_name">Tên Ứng Dụng *</label>
+            <input
+              type="text"
+              id="update_application_name"
+              name="application_name"
+              placeholder="VD: PMR test..."
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="update_url_site">URL site</label>
+            <input
+              type="text"
+              id="update_url_site"
+              name="url_site"
+              placeholder="VD: https://pmr.testing.com"
+            />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="update_ip_server">IP Public</label>
+              <input
+                type="text"
+                id="update_ip_server"
+                name="ip_server"
+                placeholder="VD: 103.142.26.45"
+              />
+            </div>
+            <div class="form-group">
+              <label for="update_ip_server_local">IP Server Local</label>
+              <input
+                type="text"
+                id="update_ip_server_local"
+                name="ip_server_local"
+                placeholder="VD: 192.168.1.161"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="update_type">Loại Site</label>
+              <select id="update_type" name="type">
+                <option value="1">Website</option>
+                <option value="2">WebAPI</option>
+                <option value="3">WindowsService</option>
+                <option value="4">WorkerService</option>
+                <option value="5">DesktopApp</option>
+                <option value="6">MobileApp</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="update_status">Trạng Thái</label>
+              <select id="update_status" name="status">
+                <option value="-1">Stop</option>
+                <option value="0">Pause</option>
+                <option value="1">Run</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="update_folder_path">Đường dẫn thư mục</label>
+            <input
+              type="text"
+              id="update_folder_path"
+              name="folder_path"
+              placeholder="/var/www/html/..."
+            />
+          </div>
+          <div class="form-group">
+            <label for="update_note">Ghi chú</label>
+            <textarea
+              id="update_note"
+              name="note"
+              rows="3"
+              placeholder="VD: Đã cập nhật IP"
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn-cancel"
+              onclick="closeUpdateModal()"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              class="btn-submit"
+              onclick="updateModal()"
+            >
+              Lưu thay đổi
+            </button>
+            <input type="hidden" id="updateId" name="updateId">
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
