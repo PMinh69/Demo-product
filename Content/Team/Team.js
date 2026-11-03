@@ -3,7 +3,7 @@ const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
 async function fetchTeam() {
   const teamContainer = document.getElementById("team-grid");
-  const teams = window.teamData || [];
+  const teams = window.teamData;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data, error } = await supabase
     .from("product")

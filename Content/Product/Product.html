@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Product & Site</title>
+    <title>Sản phẩm</title>
     <link rel="stylesheet" href="../../style.css" />
     <link rel="stylesheet" href="Product.css" />
     <link
@@ -67,6 +67,30 @@
               <span>Thêm sản phẩm</span>
             </button>
           </div>
+          <div class="product-filter-card">
+            <div class="product-search">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input
+                type="search"
+                id="product-search"
+                placeholder="Tìm kiếm sản phẩm..."
+                oninput="RenderFilter()"
+              />
+            </div>
+            <div class="product-selects">
+              <select id="filter-status" onchange="RenderFilter()">
+                <option value="">Trạng thái</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+              <select id="filter-environment" onchange="RenderFilter()">
+                <option value="">Môi trường</option>
+                <option value="0">Test</option>
+                <option value="1">Test UAT</option>
+                <option value="2">Product</option>
+              </select>
+            </div>
+          </div>
           <div class="table-container">
             <table class="product-table">
               <thead>
@@ -74,7 +98,8 @@
                   <th>tên dự án</th>
                   <th>mô tả</th>
                   <th>đối tác</th>
-                  <th>đội phụ trách</th>
+                  <th>môi trường</th>
+                  <th>main server</th>
                   <th>trạng thái</th>
                   <th>thao tác</th>
                 </tr>

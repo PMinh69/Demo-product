@@ -149,7 +149,14 @@ async function fetchSite() {
     return;
   }
 
-  siteBody.innerHTML = allSitesData
+  renderSites(allSitesData);
+}
+
+function renderSites(sites) {
+  const siteBody = document.getElementById("site-body");
+  if (!siteBody) return;
+
+  siteBody.innerHTML = sites
     .map((site) => {
       return `
       <tr>

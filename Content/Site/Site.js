@@ -27,6 +27,8 @@ const siteStatuses = {
   "-1": "Stop",
 };
 
+let allSitesData = [];
+
 async function fetchSite() {
   const siteBody = document.getElementById("site-body");
   if (!siteBody) return;
@@ -42,7 +44,32 @@ async function fetchSite() {
     return;
   }
 
-  siteBody.innerHTML = siteData
+  allSitesData = siteData || [];
+  addOption(allSitesData);
+  renderSites(allSitesData);
+}
+
+function addOption(sites) {
+  const ipSelect = document.getElementById("filter-ip");
+  const uniqueIps = [
+    ...new Set(sites.map((site) => site.ip_server).filter(Boolean)),
+  ];
+
+  ipSelect.innerHTML =
+    `<option value="">IP Server</option>` +
+    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
+}
+
+function renderSites(sites) {
+  const siteBody = document.getElementById("site-body");
+  if (!siteBody) return;
+
+  if (!sites || sites.length === 0) {
+    siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không tìm thấy site phù hợp.</td></tr>`;
+    return;
+  }
+
+  siteBody.innerHTML = sites
     .map((site) => {
       return `
       <tr>
@@ -68,7 +95,7 @@ async function fetchSite() {
           <td>
             <div class="site-table-button">
               <button type="button" class="site-row-button site-update" onclick="openUpdateModal(${site.id})">
-                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
               </button>
               <button type="button" class="site-row-button site-delete" onclick="deleteModal(${site.id})">
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
@@ -79,6 +106,31 @@ async function fetchSite() {
     `;
     })
     .join("");
+}
+
+function RenderFilter() {
+  const keyword = document
+    .getElementById("site-search")
+    .value.toLowerCase()
+    .trim();
+  const selectedIp = document.getElementById("filter-ip").value;
+  const selectedType = document.getElementById("filter-type").value;
+  const selectedStatus = document.getElementById("filter-status").value;
+
+  const filtered = allSitesData.filter((site) => {
+    const name = String(site.application_name || "").toLowerCase();
+    const matchKeyword = keyword === "" || name.includes(keyword);
+    const matchIp =
+      selectedIp === "" || String(site.ip_server) === selectedIp;
+    const matchType =
+      selectedType === "" || String(site.type) === selectedType;
+    const matchStatus =
+      selectedStatus === "" || String(site.status) === selectedStatus;
+
+    return matchKeyword && matchIp && matchType && matchStatus;
+  });
+
+  renderSites(filtered);
 }
 
 async function deleteModal(site_id) {

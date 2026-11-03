@@ -63,6 +63,37 @@
               <span>Thêm site mới</span>
             </button>
           </div>
+          <div class="site-filter-card">
+            <div class="site-search">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input
+                type="search"
+                id="site-search"
+                placeholder="Tìm kiếm site..."
+                oninput="RenderFilter()"
+              />
+            </div>
+            <div class="site-selects">
+              <select id="filter-ip" onchange="RenderFilter()">
+                <option value="">IP Server</option>
+              </select>
+              <select id="filter-type" onchange="RenderFilter()">
+                <option value="">Loại</option>
+                <option value="1">Website</option>
+                <option value="2">WebAPI</option>
+                <option value="3">WindowsService</option>
+                <option value="4">WorkerService</option>
+                <option value="5">DesktopApp</option>
+                <option value="6">MobileApp</option>
+              </select>
+              <select id="filter-status" onchange="RenderFilter()">
+                <option value="">Trạng thái</option>
+                <option value="1">Run</option>
+                <option value="0">Pause</option>
+                <option value="-1">Stop</option>
+              </select>
+            </div>
+          </div>
           <div class="table-container">
             <table class="site-table">
               <thead>

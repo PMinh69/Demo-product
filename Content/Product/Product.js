@@ -5,9 +5,18 @@ const productColumns = [
   ["name", "tên dự án"],
   ["description", "mô tả"],
   ["partner_name", "đối tác"],
-  ["team_code", "đội phụ trách"],
+  ["environment_type", "môi trường"],
+  ["main_server", "main server"],
   ["is_live", "trạng thái"],
 ];
+
+const environmentTypes = {
+  0: "Test",
+  1: "Test UAT",
+  2: "Product",
+};
+
+let allProductsData = [];
 
 function productDetail(productId) {
   const urlParams = new URLSearchParams(window.location.search);
@@ -31,12 +40,25 @@ async function fetchProduct() {
     return;
   }
 
-  if (!productData || productData.length === 0) {
+  allProductsData = productData || [];
+
+  if (allProductsData.length === 0) {
     productBody.innerHTML = `<tr><td colspan="${productColumns.length + 1}" style="text-align: center;">Không có sản phẩm nào cho đội này.</td></tr>`;
     return;
   }
 
-  productBody.innerHTML = productData
+  renderProducts(allProductsData);
+}
+
+function renderProducts(products) {
+  const productBody = document.getElementById("product-body");
+
+  if (!products || products.length === 0) {
+    productBody.innerHTML = `<tr><td colspan="${productColumns.length + 1}" style="text-align: center;">Không tìm thấy sản phẩm phù hợp.</td></tr>`;
+    return;
+  }
+
+  productBody.innerHTML = products
     .map(
       (product) => `
       <tr>
@@ -45,6 +67,9 @@ async function fetchProduct() {
             let value = product?.[column] ?? "";
             if (column === "is_live") {
               value = value === true ? "Active" : "Inactive";
+            }
+            if (column === "environment_type") {
+              value = environmentTypes[value] ?? value ?? "";
             }
             return `<td>${value}</td>`;
           })
@@ -66,6 +91,30 @@ async function fetchProduct() {
     `,
     )
     .join("");
+}
+
+function RenderFilter() {
+  const keyword = document
+    .getElementById("product-search")
+    .value.toLowerCase()
+    .trim();
+  const selectedStatus = document.getElementById("filter-status").value;
+  const selectedEnvironment =
+    document.getElementById("filter-environment").value;
+
+  const filtered = allProductsData.filter((product) => {
+    const name = String(product.name || "").toLowerCase();
+    const matchKeyword = keyword === "" || name.includes(keyword);
+    const matchStatus =
+      selectedStatus === "" || String(product.is_live) === selectedStatus;
+    const matchEnvironment =
+      selectedEnvironment === "" ||
+      String(product.environment_type) === selectedEnvironment;
+
+    return matchKeyword && matchStatus && matchEnvironment;
+  });
+
+  renderProducts(filtered);
 }
 
 async function deleteProduct(product_id) {
