@@ -7,7 +7,7 @@ const productColumns = [
   ["partner_name", "đối tác"],
   ["team_code", "đội phụ trách"],
   ["environment_type", "môi trường test"],
-  ["main_server", "port"],
+  ["main_server", "server"],
 ];
 
 const envMap = {
@@ -108,6 +108,9 @@ const siteStatuses = {
   "-1": "Stop",
 };
 
+let allSitesData = [];
+let allRelationsData = [];
+
 async function fetchSite() {
   const siteBody = document.getElementById("site-body");
   if (!siteBody) return;
@@ -116,39 +119,37 @@ async function fetchSite() {
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get("product_id");
 
-  const { data: relationData, error: relationError } = await supabase
+  const { data: relationData } = await supabase
     .from("product_site")
     .select("*")
     .eq("product_id", productId)
     .order("id", { ascending: false });
 
-  if (relationError) {
-    console.error("Lỗi khi tải bảng trung gian product_site:", relationError);
-    return;
-  }
-
-  if (relationData.length === 0) {
+  if (!relationData) {
     siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không có site nào thuộc dự án này.</td></tr>`;
     return;
   }
 
+  allRelationsData = relationData;
   const siteIds = relationData.map((item) => item.site_id).filter(Boolean);
 
-  const { data: siteData, error: siteError } = await supabase
+  const { data: siteData } = await supabase
     .from("site")
     .select("*")
     .in("id", siteIds);
 
-  if (siteError) {
-    console.error("Lỗi khi tải dữ liệu từ bảng site:", siteError);
-    return;
-  }
-
-  const sortedSiteData = siteIds
+  allSitesData = siteIds
     .map((id) => siteData.find((site) => site.id === id))
     .filter(Boolean);
 
-  siteBody.innerHTML = sortedSiteData
+  addOption(allSitesData);
+
+  if (allSitesData.length === 0) {
+    siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không tìm thấy site phù hợp.</td></tr>`;
+    return;
+  }
+
+  siteBody.innerHTML = allSitesData
     .map((site) => {
       return `
       <tr>
@@ -157,19 +158,19 @@ async function fetchSite() {
             let value = site?.[column] ?? "";
 
             if (column === "type") {
-              value = siteTypes[value];
+              value = siteTypes[value] ?? value;
             }
 
             if (column === "status") {
-              value = siteStatuses[value];
+              value = siteStatuses[value] ?? value;
             }
 
             if (column === "url_site") {
-              return `<td><a href="${value}">${value}</a></td>`;
+              return `<td><a href="${value}" target="_blank">${value}</a></td>`;
             }
 
             if (column === "note") {
-              const relation = relationData.find(
+              const relation = allRelationsData.find(
                 (item) => item.site_id === site.id,
               );
               return `<td>${relation?.note ?? ""}</td>`;
@@ -181,7 +182,7 @@ async function fetchSite() {
           <td>
             <div class="site-table-button">
               <button type="button" class="site-row-button site-update" onclick="openUpdateModal(${site.id})">
-                <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
               </button>
               <button type="button" class="site-row-button site-delete" onclick="deleteModal(${site.id})">
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
@@ -192,6 +193,43 @@ async function fetchSite() {
     `;
     })
     .join("");
+}
+
+function addOption(sites) {
+  const ipSelect = document.getElementById("filter-ip");
+
+  const uniqueIps = [...new Set(sites.map((s) => s.ip_server).filter(Boolean))];
+  ipSelect.innerHTML =
+    `<option value="">IP Server</option>` +
+    uniqueIps.map((sv) => `<option value="${sv}">${sv}</option>`).join("");
+}
+
+function RenderFilter() {
+  const keyword = document
+    .getElementById("site-search")
+    .value.toLowerCase()
+    .trim();
+  const selectedIp = document.getElementById("filter-ip").value;
+  const selectedType = document.getElementById("filter-type").value;
+  const selectedStatus = document.getElementById("filter-status").value;
+
+  const filtered = allSitesData.filter((site) => {
+    const appName = site.application_name
+      ? String(site.application_name).toLowerCase()
+      : "";
+    const matchKeyword = keyword === "" || appName.includes(keyword);
+
+    const matchIp =
+      selectedIp === "" || String(site.ip_server) === String(selectedIp);
+    const matchType =
+      selectedType === "" || String(site.type) === String(selectedType);
+    const matchStatus =
+      selectedStatus === "" || String(site.status) === String(selectedStatus);
+
+    return matchKeyword && matchIp && matchType && matchStatus;
+  });
+
+  renderSites(filtered);
 }
 
 async function deleteModal(site_id) {
@@ -207,38 +245,28 @@ async function deleteModal(site_id) {
 
   if (siteError) {
     alert("Lỗi khi xóa site:", siteError);
-    alert("Xóa thất bại!");
     return;
   }
 
   fetchSite();
-  closeModal();
+  fetchExistedSite();
+  closeModal("addModal");
 
   alert("Xóa thành công!");
 }
 
-function openModal() {
-  const modal = document.getElementById("addModal");
-  if (modal) {
-    modal.style.display = "flex";
-  }
-}
-
-function closeModal() {
-  const modal = document.getElementById("addModal");
-  if (modal) {
-    modal.style.display = "none";
-  }
-}
-
-async function openAddExistedModal() {
-  const modal = document.getElementById("addExistedModal");
-  if (!modal) return;
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
   modal.style.display = "flex";
+}
 
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  modal.style.display = "none";
+}
+
+async function fetchExistedSite() {
   const tbody = document.getElementById("existed-site-body");
-  if (!tbody) return;
-
   const totalCols = siteExistedColumns.length + 1;
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -264,7 +292,6 @@ async function openAddExistedModal() {
     .order("id", { ascending: false });
 
   if (siteError) {
-    console.error("Lỗi khi tải dữ liệu từ bảng site:", siteError);
     tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #ff6b6b;">Không thể tải dữ liệu site.</td></tr>`;
     return;
   }
@@ -281,20 +308,25 @@ async function openAddExistedModal() {
   tbody.innerHTML = availableSites
     .map((site) => {
       return `
-      <tr onclick="toggleCheckbox(this)" style="cursor: pointer;">
+      <tr onclick="toggleCheckbox(this, event)" style="cursor: pointer;">
         <td style="text-align: center;">
-          <input type="checkbox" class="existed-site-checkbox" value="${site.id}" />
+          <div class="checkbox-wrapper-40">
+            <label>
+              <input type="checkbox" class="checkbox-control existed-site-checkbox" value="${site.id}" aria-label="Chọn site" />
+              <span class="checkbox"></span>
+            </label>
+          </div>
         </td>
         ${siteExistedColumns
           .map(([column]) => {
             let value = site?.[column] ?? "";
 
             if (column === "type") {
-              value = siteTypes[value] ?? value;
+              value = siteTypes[value];
             }
 
             if (column === "status") {
-              value = siteStatuses[value] ?? value;
+              value = siteStatuses[value];
             }
 
             if (column === "url_site") {
@@ -310,20 +342,28 @@ async function openAddExistedModal() {
     .join("");
 }
 
-function toggleCheckbox(rowElement) {
-  const checkbox = rowElement.querySelector(".existed-site-checkbox");
+function toggleCheckbox(row, event) {
+  if (event.target.closest(".checkbox-wrapper-40")) return;
+  const checkbox = row.querySelector(".existed-site-checkbox");
   if (checkbox) {
     checkbox.checked = !checkbox.checked;
+    row.classList.toggle("is-checked", checkbox.checked);
   }
 }
 
-function closeAddExistedModal() {
-  document.getElementById("addExistedModal").style.display = "none";
-}
-
-function toggleSelectAllExisted(masterCheckbox) {
+function toggleSelectAllExisted(checkAll) {
   const checkboxes = document.querySelectorAll(".existed-site-checkbox");
-  checkboxes.forEach((cb) => (cb.checked = masterCheckbox.checked));
+  checkboxes.forEach((cb) => {
+    cb.checked = checkAll.checked;
+    const rowElement = cb.closest("tr");
+    if (rowElement) {
+      if (checkAll.checked) {
+        rowElement.classList.add("is-checked");
+      } else {
+        rowElement.classList.remove("is-checked");
+      }
+    }
+  });
 }
 
 async function addExistedSites() {
@@ -357,8 +397,9 @@ async function addExistedSites() {
     return;
   }
 
-  closeAddExistedModal();
+  closeModal("addExistedModal");
   fetchSite();
+  fetchExistedSite();
 }
 
 async function addModal() {
@@ -409,7 +450,7 @@ async function addModal() {
   }
 
   fetchSite();
-  closeModal();
+  closeModal("addModal");
 
   alert("Thêm mới thành công");
 }
@@ -455,13 +496,6 @@ async function openUpdateModal(site_id) {
   }
 }
 
-function closeUpdateModal() {
-  const modal = document.getElementById("updateModal");
-  if (modal) {
-    modal.style.display = "none";
-  }
-}
-
 async function updateModal() {
   const site_id = document.getElementById("updateId").value;
 
@@ -473,6 +507,7 @@ async function updateModal() {
     type: Number(document.getElementById("update_type").value),
     status: document.getElementById("update_status").value,
     folder_path: document.getElementById("update_folder_path").value,
+    last_update: new Date().toISOString().split("T")[0],
   };
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -508,10 +543,17 @@ async function updateModal() {
   alert("Cập nhật thành công");
 
   fetchSite();
-  closeUpdateModal();
+  closeModal("updateModal");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const team = urlParams.get("team");
+  const backLink = document.getElementById("detail-back-link");
+  if (backLink && team) {
+    backLink.href = `../Product.html?team=${team}`;
+  }
   fetchProduct();
   fetchSite();
+  fetchExistedSite();
 });

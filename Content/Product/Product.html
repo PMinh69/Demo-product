@@ -28,10 +28,10 @@
                 <span>Tổng quan</span>
               </button></a
             >
-            <a href="./Product.html"
+            <a href="../Team/Team.html"
               ><button class="active">
-                <i class="fa-solid fa-database" aria-hidden="true"></i>
-                <span>Sản phẩm</span>
+                <i class="fa-solid fa-users" aria-hidden="true"></i>
+                <span>Đội ngũ</span>
               </button></a
             >
             <a href="../Site/Site.html"
@@ -54,13 +54,17 @@
 
         <main id="main-content">
           <div class="product-actions">
-            <button class="product-action product-action-add" type="button">
+            <a href="../Team/Team.html">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+              <span>Quay lại</span>
+            </a>
+            <button
+              class="product-action product-action-add"
+              type="button"
+              onclick="openModal('addProductModal')"
+            >
               <i class="fa-solid fa-plus" aria-hidden="true"></i>
               <span>Thêm sản phẩm</span>
-            </button>
-            <button class="product-action product-action-update" type="button">
-              <i class="fa-solid fa-rotate"></i>
-              <span>Cập nhập</span>
             </button>
           </div>
           <div class="table-container">
@@ -71,6 +75,7 @@
                   <th>mô tả</th>
                   <th>đối tác</th>
                   <th>đội phụ trách</th>
+                  <th>trạng thái</th>
                   <th>thao tác</th>
                 </tr>
               </thead>
@@ -78,6 +83,252 @@
             </table>
           </div>
         </main>
+      </div>
+    </div>
+
+    <!-- Add modal -->
+    <div id="addProductModal" class="modal-overlay" style="display: none">
+      <div class="add-modal">
+        <form id="productForm">
+          <div class="add-modal-header">
+            <h2>Thêm sản phẩm</h2>
+          </div>
+          <div class="form-group">
+            <label for="product_name">Tên Product *</label>
+            <input
+              type="text"
+              id="product_name"
+              name="name"
+              placeholder="VD: Hệ thống thanh toán..."
+              required
+            />
+          </div>
+
+          <div class="form-row product-info-row">
+            <div class="form-group">
+              <label for="partner_name">Tên Đối Tác</label>
+              <input
+                type="text"
+                id="partner_name"
+                name="partner_name"
+                placeholder="VD: Viettel, VNPT..."
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="project_name">Tên Dự Án</label>
+              <input
+                type="text"
+                id="project_name"
+                name="project_name"
+                placeholder="E-Commerce Platform"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="project_code">Mã Dự Án</label>
+              <input
+                type="text"
+                id="project_code"
+                name="project_code"
+                placeholder="PRJ-001"
+              />
+            </div>
+          </div>
+
+          <div class="form-row product-server-row">
+            <div class="form-group">
+              <label for="main_server">Server</label>
+              <input
+                type="text"
+                id="main_server"
+                name="main_server"
+                placeholder="VD: 103.142.26.45 hoặc sv-prod-01"
+              />
+            </div>
+            <div class="form-group">
+              <label for="environment_type">Loại Môi Trường</label>
+              <select id="environment_type" name="environment_type">
+                <option value="" disabled selected hidden>
+                  -- Chọn môi trường --
+                </option>
+                <option value="0">Test</option>
+                <option value="1">Test UAT</option>
+                <option value="2">Product</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Trạng thái</label>
+
+              <div class="status-control">
+                <span class="status-text" id="productStatusText">
+                  <span class="status-text-unchecked">INACTIVE</span>
+                  <span class="status-text-checked">ACTIVE</span>
+                </span>
+
+                <div class="checkbox-wrapper-35">
+                  <input
+                    class="switch"
+                    type="checkbox"
+                    id="is_live"
+                    name="is_live"
+                  />
+                  <label for="is_live" class="status-switch-label">
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="product_description">Mô tả</label>
+            <textarea
+              id="product_description"
+              name="description"
+              rows="3"
+              placeholder="VD: Mô tả chi tiết về sản phẩm..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn-cancel"
+              onclick="closeModal('addProductModal')"
+            >
+              Hủy bỏ
+            </button>
+
+            <button type="button" class="btn-submit" onclick="addProduct()">
+              Lưu thay đổi
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Update Modal -->
+    <div id="updateProductModal" class="modal-overlay" style="display: none">
+      <div class="add-modal">
+        <form id="updateProductForm">
+          <input type="hidden" id="update_product_id" />
+          <div class="add-modal-header">
+            <h2>Cập nhật sản phẩm</h2>
+          </div>
+          <div class="form-group">
+            <label for="update_product_name">Tên Product *</label>
+            <input
+              type="text"
+              id="update_product_name"
+              name="name"
+              placeholder="VD: Hệ thống thanh toán..."
+              required
+            />
+          </div>
+
+          <div class="form-row product-info-row">
+            <div class="form-group">
+              <label for="update_partner_name">Tên Đối Tác</label>
+              <input
+                type="text"
+                id="update_partner_name"
+                name="partner_name"
+                placeholder="VD: Viettel, VNPT..."
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="update_project_name">Tên Dự Án</label>
+              <input
+                type="text"
+                id="update_project_name"
+                name="project_name"
+                placeholder="E-Commerce Platform"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="update_project_code">Mã Dự Án</label>
+              <input
+                type="text"
+                id="update_project_code"
+                name="project_code"
+                placeholder="PRJ-001"
+              />
+            </div>
+          </div>
+
+          <div class="form-row product-server-row">
+            <div class="form-group">
+              <label for="update_main_server">Server</label>
+              <input
+                type="text"
+                id="update_main_server"
+                name="main_server"
+                placeholder="VD: 103.142.26.45 hoặc sv-prod-01"
+              />
+            </div>
+            <div class="form-group">
+              <label for="update_environment_type">Loại Môi Trường</label>
+              <select id="update_environment_type" name="environment_type">
+                <option value="" disabled selected hidden>
+                  -- Chọn môi trường --
+                </option>
+                <option value="0">Test</option>
+                <option value="1">Test UAT</option>
+                <option value="2">Product</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Trạng thái</label>
+              <div class="status-control">
+                <span class="status-text" id="updateProductStatusText">
+                  <span class="status-text-unchecked">INACTIVE</span>
+                  <span class="status-text-checked">ACTIVE</span>
+                </span>
+
+                <div class="checkbox-wrapper-35">
+                  <input
+                    class="switch"
+                    type="checkbox"
+                    id="update_is_live"
+                    name="is_live"
+                  />
+                  <label for="update_is_live" class="status-switch-label">
+                    <span class="switch-track" aria-hidden="true"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="update_product_description">Mô tả</label>
+            <textarea
+              id="update_product_description"
+              name="description"
+              rows="3"
+              placeholder="VD: Mô tả chi tiết về sản phẩm..."
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn-cancel"
+              onclick="closeModal('updateProductModal')"
+            >
+              Hủy bỏ
+            </button>
+
+            <button type="button" class="btn-submit" onclick="updateProduct()">
+              Lưu thay đổi
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </body>
