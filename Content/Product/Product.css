@@ -1,8 +1,8 @@
-/* Product actions */
+/* Actions */
 .product-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -46,7 +46,8 @@
   background-color: #a0cde5;
 }
 
-/* Product table */
+/* Filter */
+/* Table */
 .table-container {
   background-color: #121929;
 }
@@ -66,11 +67,11 @@
 
 .product-table tbody tr {
   background-color: #091122;
+  transition: 0.3s;
 }
 
 .product-table tbody tr:hover {
   background-color: #0e1a33;
-  transition: 0.2s;
 }
 
 .product-filter-card {
@@ -186,7 +187,7 @@
   cursor: pointer;
 }
 
-/* Add product modal */
+/* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -201,10 +202,8 @@
 .add-modal {
   position: relative;
   box-sizing: border-box;
-  width: 90%;
-  max-width: 760px;
-  max-height: 85vh;
-  overflow-y: auto;
+  width: 760px;
+  height: 590px;
   padding: 30px;
   border: 1px solid #1f2937;
   border-radius: 12px;
@@ -226,7 +225,7 @@
   color: #ffffff;
 }
 
-/* Product form layout */
+/* Form layout */
 .add-modal .form-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
@@ -237,8 +236,9 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.add-modal .form-row.product-team-row,
 .add-modal .form-row.product-server-row {
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
 }
 
 .add-modal .form-group {
@@ -324,7 +324,7 @@
   background-color: #a0cde5;
 }
 
-/* Product status control */
+/* Status control */
 .add-modal .status-control {
   box-sizing: border-box;
   display: flex;
@@ -429,19 +429,25 @@
   transition: transform 0.2s ease;
 }
 
-.add-modal .checkbox-wrapper-35 .switch:checked
+.add-modal
+  .checkbox-wrapper-35
+  .switch:checked
   + .status-switch-label
   .switch-track {
   background-color: #10b981;
 }
 
-.add-modal .checkbox-wrapper-35 .switch:checked
+.add-modal
+  .checkbox-wrapper-35
+  .switch:checked
   + .status-switch-label
   .switch-track::after {
   transform: translateX(16px);
 }
 
-.add-modal .checkbox-wrapper-35 .switch:focus-visible
+.add-modal
+  .checkbox-wrapper-35
+  .switch:focus-visible
   + .status-switch-label
   .switch-track {
   outline: 2px solid #7dd3fc;
@@ -453,7 +459,59 @@
   color: #10b981;
 }
 
-/* Responsive layout */
+/* Product status */
+.product-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.product-status .status-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.badge-active {
+  color: #34d399;
+}
+
+.badge-inactive {
+  color: #cbd5e1;
+}
+
+/* Environment badges */
+.env-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.env-0 {
+  border: 1px solid #f59e0b;
+  background-color: #451a03;
+  color: #fcd34d;
+}
+
+.env-1 {
+  border: 1px solid #0ea5e9;
+  background-color: #082f49;
+  color: #7dd3fc;
+}
+
+.env-2 {
+  border: 1px solid #10b981;
+  background-color: #022c22;
+  color: #6ee7b7;
+}
+
+/* Responsive */
 @media (max-width: 600px) {
   .modal-overlay {
     padding: 12px;

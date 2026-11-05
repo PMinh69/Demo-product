@@ -49,6 +49,32 @@ async function fetchSite() {
   renderSites(allSitesData);
 }
 
+async function exportSitesJson() {
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: siteData } = await supabase
+    .from("site")
+    .select("*")
+    .order("id", { ascending: true });
+
+    try {
+        const jsonString = JSON.stringify(siteData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `sites-export.json`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        console.error('Lỗi khi xuất file JSON:', error);
+        alert('Đã xảy ra lỗi khi xuất file!');
+    }
+}
+
 function addOption(sites) {
   const ipSelect = document.getElementById("filter-ip");
   const uniqueIps = [
@@ -78,11 +104,17 @@ function renderSites(sites) {
             let value = site?.[column] ?? "";
 
             if (column === "type") {
-              value = siteTypes[value];
+              const typeClass = `site-type-${value}`;
+              value = `<span class="site-type-badge ${typeClass}">${siteTypes[value]}</span>`;
             }
 
             if (column === "status") {
-              value = siteStatuses[value];
+              const statusClass = String(value) === "1"
+                ? "site-status-run"
+                : String(value) === "0"
+                  ? "site-status-pause"
+                  : "site-status-stop";
+              value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value]}</span>`;
             }
 
             if (column === "url_site") {
@@ -290,6 +322,17 @@ async function updateModal() {
   closeUpdateModal();
 }
 
+const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
+
+async function logout() {
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  await supabase.auth.signOut();
+  localStorage.removeItem("loginData");
+  window.location.href = "../../Login.html";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  const emailAvt = document.getElementById("user-email");
+  emailAvt.innerHTML = loginData?.user?.email;
   fetchSite();
 });

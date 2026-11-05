@@ -4,9 +4,10 @@ const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 const productColumns = [
   ["name", "tên dự án"],
   ["description", "mô tả"],
+  ["team_code", "đội phụ trách"],
   ["partner_name", "đối tác"],
-  ["environment_type", "môi trường"],
   ["main_server", "main server"],
+  ["environment_type", "môi trường"],
   ["is_live", "trạng thái"],
 ];
 
@@ -19,21 +20,16 @@ const environmentTypes = {
 let allProductsData = [];
 
 function productDetail(productId) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const team = urlParams.get("team");
-  window.location.href = `./Detail/Detail.html?product_id=${productId}&team=${team}`;
+  window.location.href = `./Detail/Detail.html?product_id=${productId}`;
 }
 
 async function fetchProduct() {
   const productBody = document.getElementById("product-body");
-  const urlParams = new URLSearchParams(window.location.search);
-  const teamCode = urlParams.get("team");
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const { data: productData, error: productError } = await supabase
     .from("product")
     .select("*")
-    .eq("team_code", teamCode);
+    .order("id", { ascending: false });
 
   if (productError) {
     console.error("Lỗi khi tải dữ liệu:", productError);
@@ -65,12 +61,25 @@ function renderProducts(products) {
         ${productColumns
           .map(([column]) => {
             let value = product?.[column] ?? "";
+
+            if (value === "")
+              return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
+
+            if (column === "description") {
+              value = value;
+            }
+
             if (column === "is_live") {
-              value = value === true ? "Active" : "Inactive";
+              const statusClass =
+                value === true ? "badge-active" : "badge-inactive";
+              const statusText = value === true ? "Active" : "Inactive";
+              value = `<span class="product-status ${statusClass}"><span class="status-dot"></span>${statusText}</span>`;
             }
+
             if (column === "environment_type") {
-              value = environmentTypes[value] ?? value ?? "";
+              value = `<span class="env-badge env-${value}">${environmentTypes[value]}</span>`;
             }
+
             return `<td>${value}</td>`;
           })
           .join("")}
@@ -101,6 +110,7 @@ function RenderFilter() {
   const selectedStatus = document.getElementById("filter-status").value;
   const selectedEnvironment =
     document.getElementById("filter-environment").value;
+  const selectedTeam = document.getElementById("filter-team").value;
 
   const filtered = allProductsData.filter((product) => {
     const name = String(product.name || "").toLowerCase();
@@ -110,8 +120,10 @@ function RenderFilter() {
     const matchEnvironment =
       selectedEnvironment === "" ||
       String(product.environment_type) === selectedEnvironment;
+    const matchTeam =
+      selectedTeam === "" || String(product.team_code) === selectedTeam;
 
-    return matchKeyword && matchStatus && matchEnvironment;
+    return matchKeyword && matchStatus && matchEnvironment && matchTeam;
   });
 
   renderProducts(filtered);
@@ -120,7 +132,6 @@ function RenderFilter() {
 async function deleteProduct(product_id) {
   if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) return;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const { error: relationError } = await supabase
     .from("product_site")
     .delete()
@@ -160,7 +171,7 @@ async function addProduct() {
     name: document.getElementById("product_name").value.trim(),
     project_code: document.getElementById("project_code").value.trim() || null,
     project_name: document.getElementById("project_name").value.trim() || null,
-    team_code: new URLSearchParams(window.location.search).get("team"),
+    team_code: document.getElementById("team_code").value,
     partner_name: document.getElementById("partner_name").value.trim() || null,
     environment_type: document.getElementById("environment_type").value,
     main_server: document.getElementById("main_server").value.trim() || null,
@@ -170,7 +181,6 @@ async function addProduct() {
   };
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const { error } = await supabase.from("product").insert([formData]).select();
 
   if (error) {
@@ -191,13 +201,10 @@ async function openUpdateModal(product_id) {
     modal.style.display = "flex";
   }
 
-  const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY,
-  );
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const idsArray = Array.isArray(product_id) ? product_id : [product_id];
 
-  const { data: productData, error: productError } = await supabaseClient
+  const { data: productData, error: productError } = await supabase
     .from("product")
     .select("*")
     .in("id", idsArray)
@@ -217,6 +224,7 @@ async function openUpdateModal(product_id) {
       product.project_name || "";
     document.getElementById("update_project_code").value =
       product.project_code || "";
+    document.getElementById("update_team_code").value = product.team_code || "";
     document.getElementById("update_environment_type").value =
       product.environment_type ?? "";
     document.getElementById("update_main_server").value =
@@ -239,6 +247,7 @@ async function updateProduct() {
     partner_name: document.getElementById("update_partner_name").value,
     project_name: document.getElementById("update_project_name").value,
     project_code: document.getElementById("update_project_code").value,
+    team_code: document.getElementById("update_team_code").value,
     environment_type: document.getElementById("update_environment_type").value,
     main_server: document.getElementById("update_main_server").value,
     is_live: document.getElementById("update_is_live").checked,
@@ -246,7 +255,6 @@ async function updateProduct() {
   };
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const { error: productError } = await supabase
     .from("product")
     .update([formData])
@@ -264,6 +272,17 @@ async function updateProduct() {
   closeModal("updateProductModal");
 }
 
+const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
+
+async function logout() {
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  await supabase.auth.signOut();
+  localStorage.removeItem("loginData");
+  window.location.href = "../../Login.html";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  const emailAvt = document.getElementById("user-email");
+  emailAvt.innerHTML = loginData?.user?.email;
   fetchProduct();
 });

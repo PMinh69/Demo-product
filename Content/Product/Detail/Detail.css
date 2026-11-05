@@ -30,16 +30,19 @@
   text-transform: uppercase;
 }
 .env-0 {
-  background-color: #e2e8f0;
-  color: #475569;
+  border: 1px solid #F59E0B;
+  background-color: #451A03;
+  color: #FCD34D;
 }
 .env-1 {
-  background-color: #fef3c7;
-  color: #d97706;
+  border: 1px solid #0EA5E9;
+  background-color: #082F49;
+  color: #7DD3FC;
 }
 .env-2 {
-  background-color: #dcfce7;
-  color: #16a34a;
+  border: 1px solid #10B981;
+  background-color: #022C22;
+  color: #6EE7B7;
 }
 
 .product-details {
@@ -76,6 +79,7 @@
   color: #0b0f19;
   font-size: 14px;
   font-weight: 600;
+  transition: 0.3s;
 }
 
 .site-add-button:hover {
@@ -95,6 +99,7 @@
   color: #7dd3fc;
   font-size: 14px;
   font-weight: 600;
+  transition: 0.3s;
 }
 
 .site-add-existing-button:hover {
@@ -213,7 +218,7 @@
   gap: 8px;
   color: #7dd3fc;
   text-decoration: none;
-  transition: 0.2s;
+  transition: color 0.3s ease;
 }
 
 .site-heading a:hover {
@@ -234,11 +239,11 @@
 
 .site-table tbody tr {
   background-color: #091122;
+  transition: 0.3s;
 }
 
 .site-table tbody tr:hover {
   background-color: #0e1a33;
-  transition: 0.2s;
 }
 
 .site-table tbody tr.is-checked {
@@ -252,10 +257,88 @@
 
 .site-table a {
   color: inherit;
+  transition: color 0.2s ease;
+  color: #38BDF8;
+  text-decoration: none;
 }
 
 .site-table a:hover {
-  color: #7bd1fa;
+  text-decoration: underline;
+  color: #8edcfd;
+}
+
+.site-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.site-status .status-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.site-type-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.site-type-1 {
+  border-color: #1d4ed8;
+  background-color: #082f49;
+  color: #bfdbfe;
+}
+
+.site-type-2 {
+  border-color: #047857;
+  background-color: #022c22;
+  color: #a7f3d0;
+}
+
+.site-type-3 {
+  border-color: #7e22ce;
+  background-color: #3b0764;
+  color: #e9d5ff;
+}
+
+.site-type-4 {
+  border-color: #b45309;
+  background-color: #451a03;
+  color: #fde68a;
+}
+
+.site-type-5 {
+  border-color: #475569;
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+.site-type-6 {
+  border-color: #be123c;
+  background-color: #4c0519;
+  color: #fecdd3;
+}
+
+.site-status-run {
+  color: #34d399;
+}
+
+.site-status-pause {
+  color: #fbbf24;
+}
+
+.site-status-stop {
+  color: #fb7185;
 }
 
 .site-table-button {
@@ -323,15 +406,15 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   position: relative;
   text-align: left;
-  max-height: 85vh;
+  max-height: 10px;
   overflow-y: auto;
 }
 
 .add-existed-modal {
   position: relative;
   box-sizing: border-box;
-  width: 90%;
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1500px;
   max-height: 85vh;
   overflow-y: auto;
   border-radius: 12px;
@@ -342,10 +425,32 @@
 
 .existed-site-toolbar {
   margin: 15px 52px 15px 15px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 12px;
 }
 
 .existed-site-search {
   margin-bottom: 0;
+}
+
+.existed-site-selects {
+  display: flex;
+  gap: 12px;
+}
+
+.existed-site-selects select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background-color: #091122;
+  color: #ffffff;
+  outline: none;
+}
+
+.existed-site-selects select:focus {
+  border-color: #7dd3fc;
 }
 
 .add-existed-modal .close-btn {
@@ -369,6 +474,7 @@
   font-size: 24px;
   cursor: pointer;
   color: #b2b2b4;
+  transition: color 0.2s ease;
 }
 
 .close-btn:hover {
@@ -432,6 +538,17 @@
   margin-top: 25px;
 }
 
+.add-existed-modal .form-actions {
+  min-height: 60px;
+  align-items: center;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.add-existed-modal .form-actions .btn-submit {
+  margin-right: 15px;
+}
+
 .btn-cancel,
 .btn-submit {
   padding: 10px 18px;
@@ -439,6 +556,7 @@
   cursor: pointer;
   font-size: 14px;
   border: none;
+  transition: 0.3s;
 }
 
 .btn-cancel {
@@ -502,6 +620,7 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+  transition: 0.3s;
 }
 
 .btn-delete:hover {

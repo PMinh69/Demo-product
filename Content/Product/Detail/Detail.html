@@ -28,10 +28,10 @@
                 <span>Tổng quan</span>
               </button></a
             >
-            <a href="../../Team/Team.html"
+            <a href="../Product.html"
               ><button class="active">
-                <i class="fa-solid fa-users" aria-hidden="true"></i>
-                <span>Đội ngũ</span>
+                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <span>Sản phẩm</span>
               </button></a
             >
             <a href="../../Site/Site.html"
@@ -47,8 +47,13 @@
       <div class="main-wrapper">
         <header class="header">
           <div class="header-user">
-            <span>Admin Lead</span>
-            <div class="avatar">A</div>
+            <span id="user-email">Admin Lead</span>
+            <div class="user-menu">
+              <button class="avatar" type="button">A</button>
+              <div class="user-dropdown">
+                <button onclick="logout()">Dang xuat</button>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -112,9 +117,9 @@
               <thead>
                 <tr>
                   <th>Tên ứng dụng</th>
+                  <th>Ghi chú</th>
                   <th>URL Site</th>
                   <th>IP Server</th>
-                  <th>Ghi chú</th>
                   <th>Loại</th>
                   <th>Trạng thái</th>
                   <th>IP Server nội bộ</th>
@@ -141,7 +146,28 @@
               type="text"
               id="searchExistedSite"
               placeholder="Tìm kiếm theo tên ứng dụng, URL hoặc IP..."
+              oninput="RenderFilter()"
             />
+          </div>
+          <div class="existed-site-selects">
+            <select id="existed-filter-ip" onchange="RenderFilter()">
+              <option value="">IP Server</option>
+            </select>
+            <select id="existed-filter-type" onchange="RenderFilter()">
+              <option value="">Loại</option>
+              <option value="1">Website</option>
+              <option value="2">WebAPI</option>
+              <option value="3">WindowsService</option>
+              <option value="4">WorkerService</option>
+              <option value="5">DesktopApp</option>
+              <option value="6">MobileApp</option>
+            </select>
+            <select id="existed-filter-status" onchange="RenderFilter()">
+              <option value="">Trạng thái</option>
+              <option value="1">Run</option>
+              <option value="0">Pause</option>
+              <option value="-1">Stop</option>
+            </select>
           </div>
         </div>
         <div

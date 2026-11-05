@@ -60,7 +60,7 @@ async function fetchProduct() {
 
       <div class="product-card-body">
         <div class="product-details">
-          <p><strong>Mô tả:</strong> ${product.description || "Không có mô tả"}</p>
+          <p><strong>Mô tả:</strong> ${product.description || `<i class="fa-solid fa-minus" aria-hidden="true"></i>`}</p>
           <p><strong>Đối tác:</strong> ${product.partner_name || "N/A"}</p>
           <p><strong>Đội phụ trách:</strong> ${product.team_code || "N/A"}</p>
           <p><strong>Server:</strong> ${product.main_server || "N/A"}</p>
@@ -74,9 +74,9 @@ async function fetchProduct() {
 
 const siteColumns = [
   ["application_name", "Tên ứng dụng"],
+  ["note", "Ghi chú"],
   ["url_site", "URL Site"],
   ["ip_server", "IP Server"],
-  ["note", "Ghi chú"],
   ["type", "Loại"],
   ["status", "Trạng thái"],
   ["ip_server_local", "IP Server nội bộ"],
@@ -110,6 +110,7 @@ const siteStatuses = {
 
 let allSitesData = [];
 let allRelationsData = [];
+let availableSitesData = [];
 
 async function fetchSite() {
   const siteBody = document.getElementById("site-body");
@@ -138,9 +139,11 @@ async function fetchSite() {
     .select("*")
     .in("id", siteIds);
 
-  allSitesData = siteIds
-    .map((id) => siteData.find((site) => site.id === id))
-    .filter(Boolean);
+  allSitesData = (siteData || []).sort((a, b) => {
+    const relationA = relationData.find((item) => item.site_id === a.id);
+    const relationB = relationData.find((item) => item.site_id === b.id);
+    return (relationB?.id ?? 0) - (relationA?.id ?? 0);
+  });
 
   addOption(allSitesData);
 
@@ -164,12 +167,22 @@ function renderSites(sites) {
           .map(([column]) => {
             let value = site?.[column] ?? "";
 
+            if (value === "")
+              return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
+
             if (column === "type") {
-              value = siteTypes[value] ?? value;
+              const typeClass = `site-type-${value}`;
+              value = `<span class="site-type-badge ${typeClass}">${siteTypes[value] ?? value}</span>`;
             }
 
             if (column === "status") {
-              value = siteStatuses[value] ?? value;
+              const statusClass =
+                value === "1"
+                  ? "site-status-run"
+                  : value === "0"
+                    ? "site-status-pause"
+                    : "site-status-stop";
+              value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value] ?? value}</span>`;
             }
 
             if (column === "url_site") {
@@ -180,7 +193,7 @@ function renderSites(sites) {
               const relation = allRelationsData.find(
                 (item) => item.site_id === site.id,
               );
-              return `<td>${relation?.note ?? ""}</td>`;
+              return `<td>${relation?.note ?? `<i class="fa-solid fa-minus" aria-hidden="true"></i>`}</td>`;
             }
 
             return `<td>${value}</td>`;
@@ -237,6 +250,40 @@ function RenderFilter() {
   });
 
   renderSites(filtered);
+
+  const existedKeyword = (
+    document.getElementById("searchExistedSite")?.value || ""
+  )
+    .toLowerCase()
+    .trim();
+  const existedIp = document.getElementById("existed-filter-ip")?.value || "";
+  const existedType =
+    document.getElementById("existed-filter-type")?.value || "";
+  const existedStatus =
+    document.getElementById("existed-filter-status")?.value || "";
+
+  const filteredExisted = availableSitesData.filter((site) => {
+    const searchableText = [
+      site.application_name,
+      site.url_site,
+      site.ip_server,
+      site.ip_server_local,
+    ]
+      .join(" ")
+      .toLowerCase();
+    const matchKeyword =
+      existedKeyword === "" || searchableText.includes(existedKeyword);
+    const matchIp =
+      existedIp === "" || String(site.ip_server) === String(existedIp);
+    const matchType =
+      existedType === "" || String(site.type) === String(existedType);
+    const matchStatus =
+      existedStatus === "" || String(site.status) === String(existedStatus);
+
+    return matchKeyword && matchIp && matchType && matchStatus;
+  });
+
+  renderExistedSites(filteredExisted);
 }
 
 async function deleteModal(site_id) {
@@ -306,13 +353,34 @@ async function fetchExistedSite() {
   const availableSites = (siteData || []).filter(
     (site) => !existedSite.includes(site.id),
   );
+  availableSitesData = availableSites;
+  addExistedIpOptions(availableSites);
+  renderExistedSites(availableSites);
+}
 
-  if (availableSites.length === 0) {
+function addExistedIpOptions(sites) {
+  const ipSelect = document.getElementById("existed-filter-ip");
+  if (!ipSelect) return;
+
+  const uniqueIps = [
+    ...new Set(sites.map((site) => site.ip_server).filter(Boolean)),
+  ];
+  ipSelect.innerHTML =
+    `<option value="">IP Server</option>` +
+    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
+}
+
+function renderExistedSites(sites) {
+  const tbody = document.getElementById("existed-site-body");
+  if (!tbody) return;
+  const totalCols = siteExistedColumns.length + 1;
+
+  if (!sites || sites.length === 0) {
     tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #9ca3af;">Không có site nào khả dụng để thêm.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = availableSites
+  tbody.innerHTML = sites
     .map((site) => {
       return `
       <tr onclick="toggleCheckbox(this, event)" style="cursor: pointer;">
@@ -328,12 +396,22 @@ async function fetchExistedSite() {
           .map(([column]) => {
             let value = site?.[column] ?? "";
 
+            if (value === "")
+              return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
+
             if (column === "type") {
-              value = siteTypes[value];
+              const typeClass = `site-type-${value}`;
+              value = `<span class="site-type-badge ${typeClass}">${siteTypes[value] ?? value}</span>`;
             }
 
             if (column === "status") {
-              value = siteStatuses[value];
+              const statusClass =
+                String(value) === "1"
+                  ? "site-status-run"
+                  : String(value) === "0"
+                    ? "site-status-pause"
+                    : "site-status-stop";
+              value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value]}</span>`;
             }
 
             if (column === "url_site") {
@@ -474,17 +552,31 @@ async function openUpdateModal(site_id) {
   );
   const idsArray = Array.isArray(site_id) ? site_id : [site_id];
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get("product_id");
+
+  const { data: relationData, error: relationError } = await supabaseClient
+    .from("product_site")
+    .select("*")
+    .eq("product_id", productId)
+    .in("site_id", idsArray);
+  if (relationError) {
+    throw relationError;
+  }
+
   const { data: siteData, error: siteError } = await supabaseClient
     .from("site")
     .select("*")
-    .in("id", idsArray)
-    .order("id", { ascending: false });
+    .in("id", idsArray);
 
   if (siteError) {
     throw siteError;
   }
   if (siteData && siteData.length > 0) {
     const site = siteData[0];
+    const relation = relationData?.find(
+      (item) => String(item.site_id) === String(site_id),
+    );
     document.getElementById("updateId").value = site_id;
     document.getElementById("update_application_name").value =
       site.application_name;
@@ -494,10 +586,9 @@ async function openUpdateModal(site_id) {
       site.ip_server_local || "";
     document.getElementById("update_type").value = site.type;
     document.getElementById("update_status").value = site.status;
-
     document.getElementById("update_folder_path").value =
       site.folder_path || "";
-    document.getElementById("update_note").value = site.note || "";
+    document.getElementById("update_note").value = relation?.note || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", site_id);
   }
@@ -553,13 +644,18 @@ async function updateModal() {
   closeModal("updateModal");
 }
 
+const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
+
+async function logout() {
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  await supabase.auth.signOut();
+  localStorage.removeItem("loginData");
+  window.location.href = "../../../Login.html";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const team = urlParams.get("team");
-  const backLink = document.getElementById("detail-back-link");
-  if (backLink && team) {
-    backLink.href = `../Product.html?team=${team}`;
-  }
+  const emailAvt = document.getElementById("user-email");
+  emailAvt.innerHTML = loginData?.user?.email;
   fetchProduct();
   fetchSite();
   fetchExistedSite();

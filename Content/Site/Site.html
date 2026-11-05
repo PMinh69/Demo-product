@@ -29,10 +29,10 @@
                 <span>Tổng quan</span>
               </button>
             </a>
-            <a href="../Team/Team.html">
+            <a href="../Product/Product.html">
               <button type="button">
-                <i class="fa-solid fa-users" aria-hidden="true"></i>
-                <span>Đội ngũ</span>
+                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <span>Sản phẩm</span>
               </button>
             </a>
             <a href="./Site.html">
@@ -48,20 +48,32 @@
       <div class="main-wrapper">
         <header class="header">
           <div class="header-user">
-            <span>Admin Lead</span>
-            <div class="avatar">A</div>
+            <span id="user-email">Admin Lead</span>
+            <div class="user-menu">
+              <button class="avatar" type="button">A</button>
+              <div class="user-dropdown">
+                <button onclick="logout()">Dang xuat</button>
+              </div>
+            </div>
           </div>
         </header>
+        
         <main id="main-content">
           <div class="site-heading">
-            <a class="site-back-link" href="../Team/Team.html">
+            <a class="site-back-link" href="../Product/Product.html">
               <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
               <span>Quay lại</span>
             </a>
-            <button class="site-add-button" type="button" onclick="openModal()">
-              <i class="fa-solid fa-plus" aria-hidden="true"></i>
-              <span>Thêm site mới</span>
-            </button>
+            <div class="site-heading-actions">
+              <button class="site-export-button" type="button" onclick="exportSitesJson()">
+                <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
+                <span>Xuất JSON</span>
+              </button>
+              <button class="site-add-button" type="button" onclick="openModal()">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Thêm site mới</span>
+              </button>
+            </div>
           </div>
           <div class="site-filter-card">
             <div class="site-search">

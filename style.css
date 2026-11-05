@@ -65,6 +65,7 @@ aside.sidebar {
   align-items: center;
   gap: 10px;
   padding: 12px 15px;
+  transition: 0.3s;
 }
 
 .sidebar-menu button i {
@@ -72,10 +73,19 @@ aside.sidebar {
   text-align: center;
 }
 
-.sidebar-menu button:hover,
 .sidebar-menu button.active {
-  background-color: #1e3a5f;
+  background-color: #082F49;
+  color: #7DD3FC;
+}
+
+.sidebar-menu button:hover {
+  background-color: #223050;
   color: #ffffff;
+}
+
+.sidebar-menu button.active:hover {
+  background-color: #0d4970;
+  color: #7DD3FC;
 }
 
 .sidebar-menu button:focus-visible {
@@ -108,17 +118,76 @@ header.header {
   display: flex;
   align-items: center;
   gap: 12px;
+  position: relative;
 }
 
 .avatar {
   width: 35px;
   height: 35px;
   background-color: #2563eb;
+  border: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 180px;
+  height: 12px;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 180px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #1f2937;
+  border-radius: 6px;
+  background-color: #111828;
+  z-index: 10;
+}
+
+.user-menu:hover .user-dropdown,
+.user-menu:focus-within .user-dropdown {
+  display: flex;
+}
+
+.user-dropdown span {
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dropdown button {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 6px;
+  background-color: #3d1414;
+  color: #fb7185;
+  font: inherit;
+  cursor: pointer;
+}
+
+.user-dropdown button:hover {
+  background-color: #542020;
 }
 
 /* MAIN CONTENT */

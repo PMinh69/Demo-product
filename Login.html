@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dang nhap | Manage Product</title>
+    <link rel="stylesheet" href="Login.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="Login.js"></script>
+</head>
+<body>
+    <main class="login-page">
+        <section class="login-card" aria-labelledby="login-title">
+            <h1 id="login-title">Dang nhap</h1>
+            <form class="login-form" id="login-form">
+                <input id="email" name="email" type="email" placeholder="Email" required>
+                <input id="password" name="password" type="password" placeholder="Mat khau" required>
+                <button id="login-btn" type="button" onclick="submitLogin()">Dang nhap</button>
+            </form>
+            <p class="login-message" role="alert" aria-live="polite"></p>
+        </section>
+    </main>
+</body>
+</html>

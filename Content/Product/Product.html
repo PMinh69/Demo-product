@@ -28,10 +28,10 @@
                 <span>Tổng quan</span>
               </button></a
             >
-            <a href="../Team/Team.html"
+            <a href="./Product.html"
               ><button class="active">
-                <i class="fa-solid fa-users" aria-hidden="true"></i>
-                <span>Đội ngũ</span>
+                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <span>Sản phẩm</span>
               </button></a
             >
             <a href="../Site/Site.html"
@@ -47,17 +47,18 @@
       <div class="main-wrapper">
         <header class="header">
           <div class="header-user">
-            <span>Admin Lead</span>
-            <div class="avatar">A</div>
+            <span id="user-email">Admin Lead</span>
+            <div class="user-menu">
+              <button class="avatar" type="button">A</button>
+              <div class="user-dropdown">
+                <button onclick="logout()">Dang xuat</button>
+              </div>
+            </div>
           </div>
         </header>
 
         <main id="main-content">
           <div class="product-actions">
-            <a href="../Team/Team.html">
-              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-              <span>Quay lại</span>
-            </a>
             <button
               class="product-action product-action-add"
               type="button"
@@ -78,6 +79,14 @@
               />
             </div>
             <div class="product-selects">
+              <select id="filter-team" onchange="RenderFilter()">
+                <option value="">Đội phụ trách</option>
+                <option value="team1">Team 1</option>
+                <option value="team2">Team 2</option>
+                <option value="team3">Team 3</option>
+                <option value="team4">Team 4</option>
+                <option value="mscscrum">Mscscrum</option>
+              </select>
               <select id="filter-status" onchange="RenderFilter()">
                 <option value="">Trạng thái</option>
                 <option value="true">Active</option>
@@ -97,9 +106,10 @@
                 <tr>
                   <th>tên dự án</th>
                   <th>mô tả</th>
+                  <th>đội phụ trách</th>
                   <th>đối tác</th>
-                  <th>môi trường</th>
                   <th>main server</th>
+                  <th>môi trường</th>
                   <th>trạng thái</th>
                   <th>thao tác</th>
                 </tr>
@@ -161,15 +171,17 @@
             </div>
           </div>
 
-          <div class="form-row product-server-row">
+          <div class="form-row product-team-row">
             <div class="form-group">
-              <label for="main_server">Server</label>
-              <input
-                type="text"
-                id="main_server"
-                name="main_server"
-                placeholder="VD: 103.142.26.45 hoặc sv-prod-01"
-              />
+              <label for="team_code">Đội phụ trách</label>
+              <select id="team_code" name="team_code">
+                <option value="">-- Chọn đội --</option>
+                <option value="team1">Team 1</option>
+                <option value="team2">Team 2</option>
+                <option value="team3">Team 3</option>
+                <option value="team4">Team 4</option>
+                <option value="mscscrum">Mscscrum</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="environment_type">Loại Môi Trường</label>
@@ -182,7 +194,18 @@
                 <option value="2">Product</option>
               </select>
             </div>
+          </div>
 
+          <div class="form-row product-server-row">
+            <div class="form-group">
+              <label for="main_server">Server</label>
+              <input
+                type="text"
+                id="main_server"
+                name="main_server"
+                placeholder="VD: 103.142.26.45 hoặc sv-prod-01"
+              />
+            </div>
             <div class="form-group">
               <label>Trạng thái</label>
 
@@ -285,15 +308,17 @@
             </div>
           </div>
 
-          <div class="form-row product-server-row">
+          <div class="form-row product-team-row">
             <div class="form-group">
-              <label for="update_main_server">Server</label>
-              <input
-                type="text"
-                id="update_main_server"
-                name="main_server"
-                placeholder="VD: 103.142.26.45 hoặc sv-prod-01"
-              />
+              <label for="update_team_code">Đội phụ trách</label>
+              <select id="update_team_code" name="team_code">
+                <option value="">-- Chọn đội --</option>
+                <option value="team1">Team 1</option>
+                <option value="team2">Team 2</option>
+                <option value="team3">Team 3</option>
+                <option value="team4">Team 4</option>
+                <option value="mscscrum">Mscscrum</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="update_environment_type">Loại Môi Trường</label>
@@ -306,7 +331,18 @@
                 <option value="2">Product</option>
               </select>
             </div>
+          </div>
 
+          <div class="form-row product-server-row">
+            <div class="form-group">
+              <label for="update_main_server">Server</label>
+              <input
+                type="text"
+                id="update_main_server"
+                name="main_server"
+                placeholder="VD: 103.142.26.45 hoặc sv-prod-01"
+              />
+            </div>
             <div class="form-group">
               <label>Trạng thái</label>
               <div class="status-control">

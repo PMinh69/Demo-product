@@ -1,33 +1,16 @@
-import { createClient } from '@supabase/supabase-js'
+const SUPABASE_URL = "https://mphfczktlajxwyspbmmt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-var xValues = ["Italy", "France", "Spain", "USA", "Argentina"];
-var yValues = [55, 49, 44, 24, 15];
-var barColors = [
-  "#b91d47",
-  "#00aba9",
-  "#2b5797",
-  "#e8c3b9",
-  "#1e7145"
-];
-
-new Chart("myChart", {
-  type: "doughnut",
-  data: {
-    labels: xValues,
-    datasets: [{
-      backgroundColor: barColors,
-      data: yValues
-    }]
-  },
-  options: {
-    title: {
-      display: true,
-      text: "World Wide Wine Production 2018"
-    }
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  const emailAvt = document.getElementById("user-email");
+  emailAvt.innerHTML = loginData?.user?.email;
 });
+
+async function logout() {
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  await supabase.auth.signOut();
+  localStorage.removeItem("loginData");
+  window.location.href = "../../Login.html";
+}
