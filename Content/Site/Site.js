@@ -51,28 +51,29 @@ async function fetchSite() {
 
 async function exportSitesJson() {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: siteData } = await supabase
+  const { data } = await supabase
     .from("site")
     .select("*")
     .order("id", { ascending: true });
 
-    try {
-        const jsonString = JSON.stringify(siteData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `sites-export.json`;
+  const filteredData = data.map((item) => ({
+    id: item.id,
+    pass: item.password,
+  }));
 
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-    } catch (error) {
-        console.error('Lỗi khi xuất file JSON:', error);
-        alert('Đã xảy ra lỗi khi xuất file!');
-    }
+  const jsonString = JSON.stringify(filteredData, null, 2);
+  const blob = new Blob([jsonString], {
+    type: "application/json;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `sites-export.json`;
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function addOption(sites) {
@@ -109,11 +110,12 @@ function renderSites(sites) {
             }
 
             if (column === "status") {
-              const statusClass = String(value) === "1"
-                ? "site-status-run"
-                : String(value) === "0"
-                  ? "site-status-pause"
-                  : "site-status-stop";
+              const statusClass =
+                String(value) === "1"
+                  ? "site-status-run"
+                  : String(value) === "0"
+                    ? "site-status-pause"
+                    : "site-status-stop";
               value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value]}</span>`;
             }
 
@@ -152,10 +154,8 @@ function RenderFilter() {
   const filtered = allSitesData.filter((site) => {
     const name = String(site.application_name || "").toLowerCase();
     const matchKeyword = keyword === "" || name.includes(keyword);
-    const matchIp =
-      selectedIp === "" || String(site.ip_server) === selectedIp;
-    const matchType =
-      selectedType === "" || String(site.type) === selectedType;
+    const matchIp = selectedIp === "" || String(site.ip_server) === selectedIp;
+    const matchType = selectedType === "" || String(site.type) === selectedType;
     const matchStatus =
       selectedStatus === "" || String(site.status) === selectedStatus;
 
@@ -165,20 +165,27 @@ function RenderFilter() {
   renderSites(filtered);
 }
 
-async function deleteModal(site_id) {
-  if (!confirm("Bạn có chắc chắn muốn xóa site này không?")) return;
+function deleteModal(siteId) {
+  document.getElementById("delete_product_id").value = siteId;
+  document.getElementById("deleteSiteModal").style.display = "flex";
+}
 
+async function confirmDeleteSite() {
+  const siteId = document.getElementById("delete_product_id").value;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data: relationData } = await supabase
     .from("product_site")
     .select("*")
-    .eq("site_id", site_id);
+    .eq("site_id", siteId);
 
   if (relationData.length) {
-    await supabase.from("product_site").delete().eq("site_id", site_id);
+    await supabase.from("product_site").delete().eq("site_id", siteId);
   }
 
-  const { siteError } = await supabase.from("site").delete().eq("id", site_id);
+  const { error: siteError } = await supabase
+    .from("site")
+    .delete()
+    .eq("id", siteId);
 
   if (siteError) {
     alert("Lỗi khi xóa site:", siteError);
@@ -189,20 +196,18 @@ async function deleteModal(site_id) {
   const siteBody = document.getElementById("site-body");
   siteBody.innerHTML = ``;
   fetchSite();
-  closeModal();
-
-  alert("Xóa thành công!");
+  closeModal("deleteSiteModal");
 }
 
-function openModal() {
-  const modal = document.getElementById("addModal");
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
   if (modal) {
     modal.style.display = "flex";
   }
 }
 
-function closeModal() {
-  const modal = document.getElementById("addModal");
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
   if (modal) {
     modal.style.display = "none";
   }
@@ -235,7 +240,7 @@ async function addModal() {
   const siteBody = document.getElementById("site-body");
   siteBody.innerHTML = ``;
   fetchSite();
-  closeModal();
+  closeModal("addModal");
 
   alert("Thêm mới thành công");
 }
@@ -281,13 +286,6 @@ async function openUpdateModal(site_id) {
   }
 }
 
-function closeUpdateModal() {
-  const modal = document.getElementById("updateModal");
-  if (modal) {
-    modal.style.display = "none";
-  }
-}
-
 async function updateModal() {
   const site_id = document.getElementById("updateId").value;
 
@@ -319,7 +317,7 @@ async function updateModal() {
   const siteBody = document.getElementById("site-body");
   siteBody.innerHTML = ``;
   fetchSite();
-  closeUpdateModal();
+  closeModal("updateModal");
 }
 
 const loginData = JSON.parse(localStorage.getItem("loginData") || "null");

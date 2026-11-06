@@ -91,7 +91,7 @@ function renderProducts(products) {
               <button class="product-row-button product-update" onclick="openUpdateModal(${product.id})">
                 <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
               </button>
-              <button class="product-row-button product-delete" onclick="deleteProduct(${product.id})">
+              <button class="product-row-button product-delete" onclick="openDeleteModal(${product.id})">
                 <i class="fa-solid fa-trash" aria-hidden="true"></i>
               </button>
             </div>
@@ -129,13 +129,18 @@ function RenderFilter() {
   renderProducts(filtered);
 }
 
-async function deleteProduct(product_id) {
-  if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) return;
+function openDeleteModal(productId) {
+  document.getElementById("delete_product_id").value = productId;
+  openModal("deleteProductModal");
+}
+
+async function confirmDeleteProduct() {
+  const productId = document.getElementById("delete_product_id").value;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { error: relationError } = await supabase
     .from("product_site")
     .delete()
-    .eq("product_id", product_id);
+    .eq("product_id", productId);
 
   if (relationError) {
     alert(`Lỗi khi xóa liên kết sản phẩm: ${relationError.message}`);
@@ -145,15 +150,15 @@ async function deleteProduct(product_id) {
   const { error: productError } = await supabase
     .from("product")
     .delete()
-    .eq("id", product_id);
+    .eq("id", productId);
 
   if (productError) {
     alert(`Lỗi khi xóa sản phẩm: ${productError.message}`);
     return;
   }
 
+  closeModal("deleteProductModal");
   fetchProduct();
-  alert("Xóa thành công!");
 }
 
 function openModal(modalId) {

@@ -286,22 +286,38 @@ function RenderFilter() {
   renderExistedSites(filteredExisted);
 }
 
-async function deleteModal(site_id) {
-  if (!confirm("Bạn có chắc chắn muốn xóa site này không?")) return;
+let pendingDeleteSiteId = null;
+
+function deleteModal(siteId) {
+  pendingDeleteSiteId = siteId;
+  document.getElementById("deleteSiteModal").style.display = "flex";
+}
+
+function cancelDeleteSite() {
+  pendingDeleteSiteId = null;
+  document.getElementById("deleteSiteModal").style.display = "none";
+}
+
+async function confirmDeleteSite() {
+  if (pendingDeleteSiteId === null) return;
+
+  const siteId = pendingDeleteSiteId;
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get("product_id");
-  const { siteError } = await supabase
+  const { error: relationError } = await supabase
     .from("product_site")
     .delete()
-    .eq("site_id", site_id)
+    .eq("site_id", siteId)
     .eq("product_id", productId);
 
-  if (siteError) {
-    alert("Lỗi khi xóa site:", siteError);
+  if (relationError) {
+    alert(`Lỗi khi xóa liên kết site: ${relationError.message}`);
     return;
   }
 
+  pendingDeleteSiteId = null;
+  document.getElementById("deleteSiteModal").style.display = "none";
   fetchSite();
   fetchExistedSite();
   closeModal("addModal");

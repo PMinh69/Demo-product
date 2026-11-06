@@ -30,7 +30,7 @@
             >
             <a href="./Product.html"
               ><button class="active">
-                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <i class="fa-solid fa-box" aria-hidden="true"></i>
                 <span>Sản phẩm</span>
               </button></a
             >
@@ -390,6 +390,26 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteProductModal" class="modal-overlay" style="display: none">
+      <div class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-product-title">
+        <div class="delete-modal-icon">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        </div>
+        <input type="hidden" id="delete_product_id" />
+        <h2 id="delete-product-title">Xóa sản phẩm?</h2>
+        <p>Bạn có chắc chắn muốn xóa sản phẩm này không?</p>
+        <div class="delete-modal-actions">
+          <button type="button" class="delete-modal-cancel" onclick="closeModal('deleteProductModal')">
+            Hủy bỏ
+          </button>
+          <button type="button" class="delete-modal-confirm" onclick="confirmDeleteProduct()">
+            Xóa
+          </button>
+        </div>
       </div>
     </div>
   </body>

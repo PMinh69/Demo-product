@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
     <link rel="stylesheet" href="../../style.css" />
-    <link rel="stylesheet" href="./Dashboard.css">
+    <link rel="stylesheet" href="./Dashboard.css" />
     <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
@@ -29,7 +29,7 @@
             >
             <a href="../Product/Product.html"
               ><button>
-                <i class="fa-solid fa-database" aria-hidden="true"></i>
+                <i class="fa-solid fa-box" aria-hidden="true"></i>
                 <span>Sản phẩm</span>
               </button></a
             >
@@ -57,6 +57,33 @@
         </header>
 
         <main id="main-content">
+          <div class="dashboard-stats">
+            <article class="stat-card stat-card-products">
+              <div class="stat-icon"><i class="fa-solid fa-box"></i></div>
+              <div class="stat-content">
+                <span class="stat-label">Tổng sản phẩm</span>
+                <strong class="stat-value" id="total-products">0</strong>
+              </div>
+            </article>
+
+            <article class="stat-card stat-card-active">
+              <div class="stat-icon">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-label">Tổng Active</span>
+                <strong class="stat-value" id="total-active-products">0</strong>
+              </div>
+            </article>
+
+            <article class="stat-card stat-card-sites">
+              <div class="stat-icon"><i class="fa-solid fa-globe"></i></div>
+              <div class="stat-content">
+                <span class="stat-label">Tổng Site</span>
+                <strong class="stat-value" id="total-sites">0</strong>
+              </div>
+            </article>
+          </div>
         </main>
       </div>
     </div>
