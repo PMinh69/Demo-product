@@ -21,20 +21,68 @@ html {
 
 /* SIDEBAR */
 aside.sidebar {
-  width: 200px;
+  width: 75px;
+  height: calc(100vh - 70px);
+  position: fixed;
+  left: 0;
+  top: 70px;
+  bottom: 0;
+  z-index: 10;
   background-color: #111828;
   border-right: 1px solid #1f2937;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+aside.sidebar:hover {
+  width: 200px;
 }
 
 .sidebar-header {
-  padding: 20px;
+  padding: 20px 0px;
   font-size: 1.1rem;
   font-weight: bold;
   color: #3b82f6;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.sidebar-header > span:last-child,
+.sidebar-menu button span {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+aside.sidebar:hover .sidebar-header > span:last-child,
+aside.sidebar:hover .sidebar-menu button span {
+  display: inline;
+  opacity: 1;
+}
+
+aside.sidebar:hover .sidebar-header {
+  padding: 20px;
+  justify-content: flex-start;
+}
+
+.brand-avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
@@ -66,6 +114,11 @@ aside.sidebar {
   gap: 10px;
   padding: 12px 15px;
   transition: 0.3s;
+  justify-content: center;
+}
+
+aside.sidebar:hover .sidebar-menu button {
+  justify-content: flex-start;
 }
 
 .sidebar-menu button i {
@@ -99,19 +152,36 @@ aside.sidebar {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: calc(100% - 75px);
+  margin-left: 75px;
+  padding-top: 70px;
   overflow: hidden;
 }
 
 /* HEADER */
 header.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 70px;
   background-color: #0F1524;
   border-bottom: 1px solid #1f2937;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 30px;
   flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #3b82f6;
+  font-size: 1.1rem;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
 .header-user {
@@ -133,6 +203,65 @@ header.header {
   font-weight: bold;
   color: #ffffff;
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  #user-email {
+    display: none;
+  }
+
+  aside.sidebar,
+  aside.sidebar:hover {
+    width: 100%;
+    height: 64px;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-top: 1px solid #1f2937;
+    border-right: 0;
+  }
+
+  aside.sidebar > div {
+    width: 100%;
+  }
+
+  .sidebar-menu,
+  aside.sidebar:hover .sidebar-menu {
+    height: 64px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    gap: 0;
+    padding: 0 8px;
+  }
+
+  .sidebar-menu a {
+    width: 64px;
+  }
+
+  .sidebar-menu button,
+  aside.sidebar:hover .sidebar-menu button {
+    width: 64px;
+    height: 48px;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .sidebar-menu button span,
+  aside.sidebar:hover .sidebar-menu button span {
+    display: none;
+  }
+
+  .sidebar-menu button i {
+    font-size: 18px;
+  }
+
+  .main-wrapper {
+    width: 100%;
+    margin-left: 0;
+    padding-bottom: 64px;
+  }
 }
 
 .user-menu {

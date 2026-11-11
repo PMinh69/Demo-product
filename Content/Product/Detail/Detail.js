@@ -16,6 +16,17 @@ const envMap = {
   2: "product",
 };
 
+let siteModalMode = "add";
+let currentProduct = null;
+
+const productTeamBadgeClasses = {
+  team1: "project-team-1",
+  team2: "project-team-2",
+  team3: "project-team-3",
+  team4: "project-team-4",
+  mscscrum: "project-team-mscrum",
+};
+
 async function fetchProduct() {
   const productContainer = document.getElementById("product-info");
   if (!productContainer) return;
@@ -42,41 +53,67 @@ async function fetchProduct() {
     return;
   }
 
-  if (!productData) {
+  if (!productData || productData.length === 0) {
     productContainer.innerHTML = `<p>Không tìm thấy sản phẩm này.</p>`;
     return;
   }
 
-  productContainer.innerHTML = productData
-    .map(
-      (product) => `
-    <div class="product-card" id="product-card-${product.id}">
-      <div class="product-card-header">
-        <h3 class="product-title">${product.name || "Chưa có tên"}</h3>
-        <span class="badge env-badge env-${product.environment_type}">
-          ${envMap[product.environment_type]}
+  currentProduct = productData[0];
+  const product = currentProduct;
+  const teamCode = String(product.team_code || "").trim();
+  const teamClass =
+    productTeamBadgeClasses[teamCode.toLowerCase()] || "project-team-default";
+  const environmentLabel =
+    envMap[product.environment_type] || "Chưa chọn môi trường";
+  const isActive = Boolean(product.is_live);
+  const renderMetaValue = (value) =>
+    value
+      ? value
+      : `<span class="project-overview-empty">Chưa cập nhật</span>`;
+
+  productContainer.innerHTML = `
+    <article class="product-card" id="product-card-${Number(product.id)}">
+      <header class="project-hero-header">
+        <div class="project-hero-heading">
+          <div class="project-hero-title-row">
+            <h1 class="project-hero-title">${product.name}</h1>
+            <span class="badge env-badge env-${Number(product.environment_type)}">
+              ${environmentLabel}
+            </span>
+          </div>
+          <div class="project-hero-identifiers">
+            ${product.project_code ? `<span class="project-code">${product.project_code}</span>` : ""}
+          </div>
+          <p class="project-description">Mô tả: ${product.description}</p>
+        </div>
+        <span class="project-product-status ${isActive ? "badge-active" : "badge-inactive"}">
+          <span class="status-dot" aria-hidden="true"></span>
+          ${isActive ? "Active" : "Inactive"}
+        </span>
+      </header>
+
+      <div class="project-overview-meta">
+        <span class="project-meta-item">
+          <strong>Đối tác:</strong> ${product.partner_name}
+        </span>
+        <span class="project-meta-item">
+          <strong>Đội phụ trách:</strong>
+          ${teamCode ? `<span class="project-team-badge ${teamClass}">${teamCode}</span>` : `<span class="project-overview-empty">Chưa cập nhật</span>`}
+        </span>
+        <span class="project-meta-item">
+          <strong>Server:</strong>
+          ${product.main_server ? `<code class="project-server">${product.main_server}</code>` : `<span class="project-overview-empty">Chưa cập nhật</span>`}
         </span>
       </div>
-
-      <div class="product-card-body">
-        <div class="product-details">
-          <p><strong>Mô tả:</strong> ${product.description || `<i class="fa-solid fa-minus" aria-hidden="true"></i>`}</p>
-          <p><strong>Đối tác:</strong> ${product.partner_name || "N/A"}</p>
-          <p><strong>Đội phụ trách:</strong> ${product.team_code || "N/A"}</p>
-          <p><strong>Server:</strong> ${product.main_server || "N/A"}</p>
-        </div>
-      </div>
-    </div>
-  `,
-    )
-    .join("");
+    </article>
+  `;
 }
 
 const siteColumns = [
   ["application_name", "Tên ứng dụng"],
-  ["note", "Ghi chú"],
   ["url_site", "URL Site"],
   ["ip_server", "IP Server"],
+  ["note", "Ghi chú"],
   ["type", "Loại"],
   ["status", "Trạng thái"],
   ["ip_server_local", "IP Server nội bộ"],
@@ -111,6 +148,156 @@ const siteStatuses = {
 let allSitesData = [];
 let allRelationsData = [];
 let availableSitesData = [];
+let selectedPublicIps = [];
+
+function getPublicIps(value) {
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(
+        value
+          .filter((ip) => ip != null)
+          .map((ip) => String(ip).trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  if (typeof value !== "string" || value.trim() === "") return [];
+
+  const trimmedValue = value.trim();
+  try {
+    const parsedValue = JSON.parse(trimmedValue);
+    if (Array.isArray(parsedValue)) {
+      return [
+        ...new Set(
+          parsedValue
+            .filter((ip) => ip != null)
+            .map((ip) => String(ip).trim())
+            .filter(Boolean),
+        ),
+      ];
+    }
+  } catch {
+    // Existing rows may contain a single IP stored as plain text.
+  }
+
+  return [trimmedValue];
+}
+
+function renderPublicIpDisplay(value) {
+  const ips = getPublicIps(value);
+  if (ips.length === 0) {
+    return `<i class="fa-solid fa-minus" aria-hidden="true"></i>`;
+  }
+
+  const [firstIp, ...remainingIps] = ips;
+  const badges = (items) =>
+    items
+      .map((ip) => `<span class="public-ip-badge">${ip}</span>`)
+      .join("");
+
+  if (remainingIps.length === 0) return badges(ips);
+
+  return `
+    <span class="public-ip-display">
+      ${badges([firstIp])}
+      <span class="public-ip-extra" hidden>${badges(remainingIps)}</span>
+      <button
+        type="button"
+        class="public-ip-expand"
+        onclick="togglePublicIpDisplay(this)"
+        aria-expanded="false"
+        aria-label="Hiển thị thêm ${remainingIps.length} IP"
+      >+${remainingIps.length}</button>
+      <button
+        type="button"
+        class="public-ip-collapse"
+        onclick="togglePublicIpDisplay(this)"
+        aria-expanded="true"
+        aria-label="Thu gọn danh sách IP"
+        title="Thu gọn"
+        hidden
+      ><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
+    </span>
+  `;
+}
+
+function togglePublicIpDisplay(button) {
+  const display = button.closest(".public-ip-display");
+  const extraIps = display.querySelector(".public-ip-extra");
+  const expandButton = display.querySelector(".public-ip-expand");
+  const collapseButton = display.querySelector(".public-ip-collapse");
+  const expanded = extraIps.hidden;
+
+  extraIps.hidden = !expanded;
+  expandButton.hidden = expanded;
+  collapseButton.hidden = !expanded;
+  expandButton.setAttribute("aria-expanded", String(expanded));
+  collapseButton.setAttribute("aria-expanded", String(expanded));
+}
+
+function renderPublicIps(ips) {
+  const list = document.getElementById("ip_server_list");
+  selectedPublicIps = getPublicIps(ips);
+  list.replaceChildren();
+
+  selectedPublicIps.forEach((ip) => {
+    const badge = document.createElement("span");
+    badge.className = "public-ip-badge";
+    const text = document.createElement("span");
+    text.textContent = ip;
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "public-ip-remove-button";
+    removeButton.textContent = "×";
+    removeButton.setAttribute("aria-label", `Xóa IP ${ip}`);
+    removeButton.addEventListener("click", () => {
+      renderPublicIps(selectedPublicIps.filter((selectedIp) => selectedIp !== ip));
+      renderPublicIpOptions();
+    });
+
+    badge.append(text, removeButton);
+    list.append(badge);
+  });
+}
+
+function renderPublicIpOptions() {
+  const options = document.getElementById("ip_server_options");
+  const availableIps = [
+    ...new Set([...window.ipPublicAddresses, ...selectedPublicIps]),
+  ];
+  options.replaceChildren();
+
+  availableIps.forEach((ip) => {
+    const label = document.createElement("label");
+    label.className = "public-ip-option";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedPublicIps.includes(ip);
+    checkbox.addEventListener("change", () => {
+      const nextIps = checkbox.checked
+        ? [...selectedPublicIps, ip]
+        : selectedPublicIps.filter((selectedIp) => selectedIp !== ip);
+      renderPublicIps(nextIps);
+      renderPublicIpOptions();
+    });
+
+    const text = document.createElement("span");
+    text.textContent = ip;
+    label.append(checkbox, text);
+    options.append(label);
+  });
+}
+
+function togglePublicIpOptions() {
+  const options = document.getElementById("ip_server_options");
+  const toggle = document.getElementById("public-ip-toggle");
+  options.hidden = !options.hidden;
+  toggle.setAttribute("aria-expanded", String(!options.hidden));
+  if (!options.hidden) renderPublicIpOptions();
+}
 
 async function fetchSite() {
   const siteBody = document.getElementById("site-body");
@@ -167,7 +354,11 @@ function renderSites(sites) {
           .map(([column]) => {
             let value = site?.[column] ?? "";
 
-            if (value === "")
+            if (column === "ip_server") {
+              return `<td>${renderPublicIpDisplay(value)}</td>`;
+            }
+
+            if (column !== "note" && value === "")
               return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
 
             if (column === "type") {
@@ -193,7 +384,8 @@ function renderSites(sites) {
               const relation = allRelationsData.find(
                 (item) => item.site_id === site.id,
               );
-              return `<td>${relation?.note ?? `<i class="fa-solid fa-minus" aria-hidden="true"></i>`}</td>`;
+              const note = relation?.note;
+              return `<td>${note == null || note === "" ? `<i class="fa-solid fa-minus" aria-hidden="true"></i>` : note}</td>`;
             }
 
             return `<td>${value}</td>`;
@@ -218,10 +410,14 @@ function renderSites(sites) {
 function addOption(sites) {
   const ipSelect = document.getElementById("filter-ip");
 
-  const uniqueIps = [...new Set(sites.map((s) => s.ip_server).filter(Boolean))];
+  const uniqueIps = [
+    ...new Set(sites.flatMap((site) => getPublicIps(site.ip_server))),
+  ];
   ipSelect.innerHTML =
     `<option value="">IP Server</option>` +
-    uniqueIps.map((sv) => `<option value="${sv}">${sv}</option>`).join("");
+    uniqueIps
+      .map((ip) => `<option value="${ip}">${ip}</option>`)
+      .join("");
 }
 
 function RenderFilter() {
@@ -240,7 +436,7 @@ function RenderFilter() {
     const matchKeyword = keyword === "" || appName.includes(keyword);
 
     const matchIp =
-      selectedIp === "" || String(site.ip_server) === String(selectedIp);
+      selectedIp === "" || getPublicIps(site.ip_server).includes(selectedIp);
     const matchType =
       selectedType === "" || String(site.type) === String(selectedType);
     const matchStatus =
@@ -266,7 +462,7 @@ function RenderFilter() {
     const searchableText = [
       site.application_name,
       site.url_site,
-      site.ip_server,
+      getPublicIps(site.ip_server).join(" "),
       site.ip_server_local,
     ]
       .join(" ")
@@ -274,7 +470,7 @@ function RenderFilter() {
     const matchKeyword =
       existedKeyword === "" || searchableText.includes(existedKeyword);
     const matchIp =
-      existedIp === "" || String(site.ip_server) === String(existedIp);
+      existedIp === "" || getPublicIps(site.ip_server).includes(existedIp);
     const matchType =
       existedType === "" || String(site.type) === String(existedType);
     const matchStatus =
@@ -320,7 +516,6 @@ async function confirmDeleteSite() {
   document.getElementById("deleteSiteModal").style.display = "none";
   fetchSite();
   fetchExistedSite();
-  closeModal("addModal");
 
   alert("Xóa thành công!");
 }
@@ -379,11 +574,13 @@ function addExistedIpOptions(sites) {
   if (!ipSelect) return;
 
   const uniqueIps = [
-    ...new Set(sites.map((site) => site.ip_server).filter(Boolean)),
+    ...new Set(sites.flatMap((site) => getPublicIps(site.ip_server))),
   ];
   ipSelect.innerHTML =
     `<option value="">IP Server</option>` +
-    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
+    uniqueIps
+      .map((ip) => `<option value="${ip}">${ip}</option>`)
+      .join("");
 }
 
 function renderExistedSites(sites) {
@@ -411,6 +608,10 @@ function renderExistedSites(sites) {
         ${siteExistedColumns
           .map(([column]) => {
             let value = site?.[column] ?? "";
+
+            if (column === "ip_server") {
+              return `<td>${renderPublicIpDisplay(value)}</td>`;
+            }
 
             if (value === "")
               return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
@@ -444,7 +645,12 @@ function renderExistedSites(sites) {
 }
 
 function toggleCheckbox(row, event) {
-  if (event.target.closest(".checkbox-wrapper-40")) return;
+  if (
+    event.target.closest(".checkbox-wrapper-40") ||
+    event.target.closest(".public-ip-display")
+  ) {
+    return;
+  }
   const checkbox = row.querySelector(".existed-site-checkbox");
   if (checkbox) {
     checkbox.checked = !checkbox.checked;
@@ -503,11 +709,32 @@ async function addExistedSites() {
   fetchExistedSite();
 }
 
+function openSiteModal(mode) {
+  document.getElementById("siteForm").reset();
+  document.getElementById("site_id").value = "";
+  renderPublicIps([]);
+  document.getElementById("ip_server_options").hidden = true;
+  document.getElementById("public-ip-toggle").setAttribute("aria-expanded", "false");
+  siteModalMode = mode;
+  document.getElementById("site-modal-title").textContent =
+    mode === "add" ? "Thêm Site" : "Cập nhật Site";
+  openModal("siteModal");
+}
+
+function submitSiteModal(event) {
+  event.preventDefault();
+  if (siteModalMode === "add") {
+    addModal();
+  } else {
+    updateModal();
+  }
+}
+
 async function addModal() {
   const formData = {
     application_name: document.getElementById("application_name").value,
     url_site: document.getElementById("url_site").value,
-    ip_server: document.getElementById("ip_server").value,
+    ip_server: getSelectedPublicIps(),
     ip_server_local: document.getElementById("ip_server_local").value,
     type: document.getElementById("type").value
       ? Number(document.getElementById("type").value)
@@ -551,17 +778,12 @@ async function addModal() {
   }
 
   fetchSite();
-  closeModal("addModal");
+  closeModal("siteModal");
 
   alert("Thêm mới thành công");
 }
 
 async function openUpdateModal(site_id) {
-  const modal = document.getElementById("updateModal");
-  if (modal) {
-    modal.style.display = "flex";
-  }
-
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY,
@@ -593,34 +815,34 @@ async function openUpdateModal(site_id) {
     const relation = relationData?.find(
       (item) => String(item.site_id) === String(site_id),
     );
-    document.getElementById("updateId").value = site_id;
-    document.getElementById("update_application_name").value =
-      site.application_name;
-    document.getElementById("update_url_site").value = site.url_site || "";
-    document.getElementById("update_ip_server").value = site.ip_server || "";
-    document.getElementById("update_ip_server_local").value =
+    openSiteModal("update");
+    document.getElementById("site_id").value = site.id;
+    document.getElementById("application_name").value =
+      site.application_name || "";
+    document.getElementById("url_site").value = site.url_site || "";
+    renderPublicIps(getPublicIps(site.ip_server));
+    document.getElementById("ip_server_local").value =
       site.ip_server_local || "";
-    document.getElementById("update_type").value = site.type;
-    document.getElementById("update_status").value = site.status;
-    document.getElementById("update_folder_path").value =
-      site.folder_path || "";
-    document.getElementById("update_note").value = relation?.note || "";
+    document.getElementById("type").value = site.type ?? "";
+    document.getElementById("status").value = site.status ?? "";
+    document.getElementById("folder_path").value = site.folder_path || "";
+    document.getElementById("note").value = relation?.note || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", site_id);
   }
 }
 
 async function updateModal() {
-  const site_id = document.getElementById("updateId").value;
+  const site_id = document.getElementById("site_id").value;
 
   const formData = {
-    application_name: document.getElementById("update_application_name").value,
-    url_site: document.getElementById("update_url_site").value,
-    ip_server: document.getElementById("update_ip_server").value,
-    ip_server_local: document.getElementById("update_ip_server_local").value,
-    type: Number(document.getElementById("update_type").value),
-    status: document.getElementById("update_status").value,
-    folder_path: document.getElementById("update_folder_path").value,
+    application_name: document.getElementById("application_name").value,
+    url_site: document.getElementById("url_site").value,
+    ip_server: getSelectedPublicIps(),
+    ip_server_local: document.getElementById("ip_server_local").value,
+    type: Number(document.getElementById("type").value),
+    status: document.getElementById("status").value,
+    folder_path: document.getElementById("folder_path").value,
     last_update: new Date().toISOString().split("T")[0],
   };
 
@@ -628,17 +850,17 @@ async function updateModal() {
   const productId = urlParams.get("product_id");
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { siteError } = await supabase
+  const { error: siteError } = await supabase
     .from("site")
     .update([formData])
     .eq("id", site_id)
     .select();
 
   const relationData = {
-    note: document.getElementById("update_note").value,
+    note: document.getElementById("note").value,
   };
 
-  const { relationError } = await supabase
+  const { error: relationError } = await supabase
     .from("product_site")
     .update([relationData])
     .eq("product_id", productId)
@@ -657,10 +879,8 @@ async function updateModal() {
   alert("Cập nhật thành công");
 
   fetchSite();
-  closeModal("updateModal");
+  closeModal("siteModal");
 }
-
-const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
 
 async function logout() {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -669,9 +889,11 @@ async function logout() {
   window.location.href = "../../../Login.html";
 }
 
+function getSelectedPublicIps() {
+  return [...selectedPublicIps];
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const emailAvt = document.getElementById("user-email");
-  emailAvt.innerHTML = loginData?.user?.email;
   fetchProduct();
   fetchSite();
   fetchExistedSite();

@@ -14,13 +14,14 @@
       defer
       src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
     ></script>
+    <script defer src="../../../common.js"></script>
+    <script defer src="../../../ipPublic.js"></script>
     <script defer src="./Detail.js"></script>
   </head>
   <body>
     <div class="app-container">
       <aside class="sidebar">
         <div>
-          <div class="sidebar-header">Brand's Name</div>
           <div class="sidebar-menu">
             <a href="../../Dashboard/Dashboard.html"
               ><button>
@@ -46,6 +47,10 @@
 
       <div class="main-wrapper">
         <header class="header">
+          <div class="brand">
+            <span class="brand-avatar">L</span>
+            <span>Brand's Name</span>
+          </div>
           <div class="header-user">
             <span id="user-email">Admin Lead</span>
             <div class="user-menu">
@@ -64,7 +69,7 @@
               <span>Quay lại</span>
             </a>
             <div class="site-actions">
-              <button class="site-add-button" onclick="openModal('addModal')">
+              <button class="site-add-button" type="button" onclick="openSiteModal('add')">
                 <i class="fa-solid fa-plus"></i>
                 <span>Thêm site mới</span>
               </button>
@@ -117,9 +122,9 @@
               <thead>
                 <tr>
                   <th>Tên ứng dụng</th>
-                  <th>Ghi chú</th>
                   <th>URL Site</th>
                   <th>IP Server</th>
+                  <th>Ghi chú</th>
                   <th>Loại</th>
                   <th>Trạng thái</th>
                   <th>IP Server nội bộ</th>
@@ -218,14 +223,15 @@
       </div>
     </div>
 
-    <!-- Add site modal -->
-    <div id="addModal" class="modal-overlay" style="display: none">
+    <!-- Add/update site modal -->
+    <div id="siteModal" class="modal-overlay" style="display: none">
       <div class="add-modal">
-        <button class="close-btn" onclick="closeModal('addModal')">
+        <button class="close-btn" type="button" onclick="closeModal('siteModal')">
           &times;
         </button>
-        <h2>Thêm Site</h2>
-        <form id="siteForm">
+        <h2 id="site-modal-title">Thêm Site</h2>
+        <form id="siteForm" onsubmit="submitSiteModal(event)">
+          <input type="hidden" id="site_id" name="site_id" />
           <div class="form-group">
             <label for="application_name">Tên Ứng Dụng *</label>
             <input
@@ -247,13 +253,27 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="ip_server">IP Public</label>
-              <input
-                type="text"
-                id="ip_server"
-                name="ip_server"
-                placeholder="VD: 103.142.26.45"
-              />
+              <label>IP Public</label>
+              <div class="public-ip-editor">
+                <div id="ip_server_list" class="public-ip-list"></div>
+                <button
+                  type="button"
+                  id="public-ip-toggle"
+                  class="public-ip-add-button"
+                  onclick="togglePublicIpOptions()"
+                  aria-label="Thêm IP public"
+                  aria-expanded="false"
+                  aria-controls="ip_server_options"
+                  title="Thêm IP"
+                >
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                </button>
+                <div
+                  id="ip_server_options"
+                  class="public-ip-options"
+                  hidden
+                ></div>
+              </div>
             </div>
             <div class="form-group">
               <label for="ip_server_local">IP Server Local</label>
@@ -314,114 +334,11 @@
             <button
               type="button"
               class="btn-cancel"
-              onclick="closeModal('addModal')"
+              onclick="closeModal('siteModal')"
             >
               Hủy bỏ
             </button>
-            <button type="button" class="btn-submit" onclick="addModal()">
-              Lưu thay đổi
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Update site modal -->
-    <div id="updateModal" class="modal-overlay" style="display: none">
-      <div class="update-modal">
-        <button class="close-btn" onclick="closeModal('updateModal')">
-          &times;
-        </button>
-        <h2>Cập nhật Site</h2>
-        <form id="updateSiteForm">
-          <div class="form-group">
-            <input type="hidden" id="updateId" name="updateId" />
-            <label for="update_application_name">Tên Ứng Dụng *</label>
-            <input
-              type="text"
-              id="update_application_name"
-              name="application_name"
-              placeholder="VD: PMR test..."
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="update_url_site">URL site</label>
-            <input
-              type="text"
-              id="update_url_site"
-              name="url_site"
-              placeholder="VD: https://pmr.testing.com"
-            />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="update_ip_server">IP Public</label>
-              <input
-                type="text"
-                id="update_ip_server"
-                name="ip_server"
-                placeholder="VD: 103.142.26.45"
-              />
-            </div>
-            <div class="form-group">
-              <label for="update_ip_server_local">IP Server Local</label>
-              <input
-                type="text"
-                id="update_ip_server_local"
-                name="ip_server_local"
-                placeholder="VD: 192.168.1.161"
-              />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="update_type">Loại Site</label>
-              <select id="update_type" name="type">
-                <option value="1">Website</option>
-                <option value="2">WebAPI</option>
-                <option value="3">WindowsService</option>
-                <option value="4">WorkerService</option>
-                <option value="5">DesktopApp</option>
-                <option value="6">MobileApp</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="update_status">Trạng Thái</label>
-              <select id="update_status" name="status">
-                <option value="-1">Stop</option>
-                <option value="0">Pause</option>
-                <option value="1">Run</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="update_folder_path">Đường dẫn thư mục</label>
-            <input
-              type="text"
-              id="update_folder_path"
-              name="folder_path"
-              placeholder="/var/www/html/..."
-            />
-          </div>
-          <div class="form-group">
-            <label for="update_note">Ghi chú</label>
-            <textarea
-              id="update_note"
-              name="note"
-              rows="3"
-              placeholder="VD: Đã cập nhật IP"
-            ></textarea>
-          </div>
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn-cancel"
-              onclick="closeModal('updateModal')"
-            >
-              Hủy bỏ
-            </button>
-            <button type="button" class="btn-submit" onclick="updateModal()">
+            <button type="submit" class="btn-submit">
               Lưu thay đổi
             </button>
           </div>

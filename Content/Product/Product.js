@@ -1,6 +1,10 @@
 const SUPABASE_URL = "https://mphfczktlajxwyspbmmt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
+let currentPage = 1;
+const itemsPerPage = 15;
+let currentFilteredData = [];
+
 const productColumns = [
   ["name", "tên dự án"],
   ["description", "mô tả"],
@@ -17,33 +21,63 @@ const environmentTypes = {
   2: "Product",
 };
 
-let allProductsData = [];
+const teamBadgeClasses = {
+  team1: "product-team-1",
+  team2: "product-team-2",
+  team3: "product-team-3",
+  team4: "product-team-4",
+  mscscrum: "product-team-mscscrum",
+};
 
 function productDetail(productId) {
   window.location.href = `./Detail/Detail.html?product_id=${productId}`;
 }
 
+function removeAccents(str) {
+  var AccentsMap = [
+    "aàảãáạăằẳẵắặâầẩẫấậ",
+    "AÀẢÃÁẠĂẰẲẴẮẶÂẦẨẪẤẬ",
+    "dđ", "DĐ",
+    "eèẻẽéẹêềểễếệ",
+    "EÈẺẼÉẸÊỀỂỄẾỆ",
+    "iìỉĩíị",
+    "IÌỈĨÍỊ",
+    "oòỏõóọôồổỗốộơờởỡớợ",
+    "OÒỎÕÓỌÔỒỔỖỐỘƠỜỞỠỚỢ",
+    "uùủũúụưừửữứự",
+    "UÙỦŨÚỤƯỪỬỮỨỰ",
+    "yỳỷỹýỵ",
+    "YỲỶỸÝỴ"    
+  ];
+  for (var i=0; i<AccentsMap.length; i++) {
+    var re = new RegExp('[' + AccentsMap[i].substr(1) + ']', 'g');
+    var char = AccentsMap[i][0];
+    str = str.replace(re, char);
+  }
+  return str;
+}
+
+let allProductsData = [];
+let productModalMode = "add";
+
 async function fetchProduct() {
-  const productBody = document.getElementById("product-body");
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: productData, error: productError } = await supabase
-    .from("product")
-    .select("*")
-    .order("id", { ascending: false });
+  try {
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { data: productData, error: productError } = await supabase
+      .from("product")
+      .select("*")
+      .order("id", { ascending: false });
 
-  if (productError) {
-    console.error("Lỗi khi tải dữ liệu:", productError);
-    return;
+    if (productError) {
+      console.error("Lỗi khi tải dữ liệu:", productError);
+      return;
+    }
+
+    allProductsData = productData || [];
+    renderProducts(allProductsData);
+  } catch (error) {
+    console.error("Lỗi khi tải dữ liệu:", error);
   }
-
-  allProductsData = productData || [];
-
-  if (allProductsData.length === 0) {
-    productBody.innerHTML = `<tr><td colspan="${productColumns.length + 1}" style="text-align: center;">Không có sản phẩm nào cho đội này.</td></tr>`;
-    return;
-  }
-
-  renderProducts(allProductsData);
 }
 
 function renderProducts(products) {
@@ -62,22 +96,29 @@ function renderProducts(products) {
           .map(([column]) => {
             let value = product?.[column] ?? "";
 
-            if (value === "")
-              return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
-
-            if (column === "description") {
-              value = value;
+            if (typeof value === "string" && value.trim() === "") {
+              return `<td><span class="product-empty-value">Chưa cập nhật</span></td>`;
             }
 
-            if (column === "is_live") {
+            if (column === "name") {
+              value = `<span class="product-name">${value}</span>`;
+            } else if (column === "team_code") {
+              const teamClass =
+                teamBadgeClasses[String(value).trim().toLowerCase()] || "";
+              value = `<span class="product-entity-tag ${teamClass}">${value}</span>`;
+            } else if (column === "partner_name") {
+              value = `<span class="product-entity-tag">${value}</span>`;
+            } else if (column === "main_server") {
+              value = `<span class="product-server">${value}</span>`;
+            } else if (column === "is_live") {
               const statusClass =
                 value === true ? "badge-active" : "badge-inactive";
               const statusText = value === true ? "Active" : "Inactive";
               value = `<span class="product-status ${statusClass}"><span class="status-dot"></span>${statusText}</span>`;
-            }
-
-            if (column === "environment_type") {
-              value = `<span class="env-badge env-${value}">${environmentTypes[value]}</span>`;
+            } else if (column === "environment_type") {
+              value = `<span class="env-badge env-${value}">${environmentTypes[value] ?? value}</span>`;
+            } else {
+              value = value;
             }
 
             return `<td>${value}</td>`;
@@ -103,10 +144,10 @@ function renderProducts(products) {
 }
 
 function RenderFilter() {
-  const keyword = document
+  const keyword = removeAccents(document
     .getElementById("product-search")
     .value.toLowerCase()
-    .trim();
+    .trim());
   const selectedStatus = document.getElementById("filter-status").value;
   const selectedEnvironment =
     document.getElementById("filter-environment").value;
@@ -171,9 +212,27 @@ function closeModal(modalId) {
   modal.style.display = "none";
 }
 
+function openProductModal(mode) {
+  const form = document.getElementById("productForm");
+  form.reset();
+  document.getElementById("product_id").value = "";
+  productModalMode = mode;
+  document.getElementById("modal-title").textContent =
+    mode === "add" ? "Thêm sản phẩm" : "Cập nhật sản phẩm";
+  openModal("productModal");
+}
+
+function submitProduct() {
+  if (productModalMode === "add") {
+    addProduct();
+  } else {
+    updateProduct();
+  }
+}
+
 async function addProduct() {
   const formData = {
-    name: document.getElementById("product_name").value.trim(),
+    name: removeAccents(document.getElementById("product_name").value.trim()),
     project_code: document.getElementById("project_code").value.trim() || null,
     project_name: document.getElementById("project_name").value.trim() || null,
     team_code: document.getElementById("team_code").value,
@@ -196,16 +255,11 @@ async function addProduct() {
   alert("Thêm Product thành công!");
   const form = document.getElementById("productForm");
   if (form) form.reset();
-  closeModal("addProductModal");
+  closeModal("productModal");
   await fetchProduct();
 }
 
 async function openUpdateModal(product_id) {
-  const modal = document.getElementById("updateProductModal");
-  if (modal) {
-    modal.style.display = "flex";
-  }
-
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const idsArray = Array.isArray(product_id) ? product_id : [product_id];
 
@@ -221,23 +275,18 @@ async function openUpdateModal(product_id) {
 
   if (productData && productData.length > 0) {
     const product = productData[0];
-    document.getElementById("update_product_id").value = product_id;
-    document.getElementById("update_product_name").value = product.name || "";
-    document.getElementById("update_partner_name").value =
-      product.partner_name || "";
-    document.getElementById("update_project_name").value =
-      product.project_name || "";
-    document.getElementById("update_project_code").value =
-      product.project_code || "";
-    document.getElementById("update_team_code").value = product.team_code || "";
-    document.getElementById("update_environment_type").value =
+    openProductModal("update");
+    document.getElementById("product_id").value = product.id;
+    document.getElementById("product_name").value = product.name || "";
+    document.getElementById("partner_name").value = product.partner_name || "";
+    document.getElementById("project_name").value = product.project_name || "";
+    document.getElementById("project_code").value = product.project_code || "";
+    document.getElementById("team_code").value = product.team_code || "";
+    document.getElementById("environment_type").value =
       product.environment_type ?? "";
-    document.getElementById("update_main_server").value =
-      product.main_server || "";
-    document.getElementById("update_is_live").checked = Boolean(
-      product.is_live,
-    );
-    document.getElementById("update_product_description").value =
+    document.getElementById("main_server").value = product.main_server || "";
+    document.getElementById("is_live").checked = Boolean(product.is_live);
+    document.getElementById("product_description").value =
       product.description || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", product_id);
@@ -245,18 +294,18 @@ async function openUpdateModal(product_id) {
 }
 
 async function updateProduct() {
-  const product_id = document.getElementById("update_product_id").value;
+  const product_id = document.getElementById("product_id").value;
 
   const formData = {
-    name: document.getElementById("update_product_name").value,
-    partner_name: document.getElementById("update_partner_name").value,
-    project_name: document.getElementById("update_project_name").value,
-    project_code: document.getElementById("update_project_code").value,
-    team_code: document.getElementById("update_team_code").value,
-    environment_type: document.getElementById("update_environment_type").value,
-    main_server: document.getElementById("update_main_server").value,
-    is_live: document.getElementById("update_is_live").checked,
-    description: document.getElementById("update_product_description").value,
+    name: document.getElementById("product_name").value,
+    partner_name: document.getElementById("partner_name").value,
+    project_name: document.getElementById("project_name").value,
+    project_code: document.getElementById("project_code").value,
+    team_code: document.getElementById("team_code").value,
+    environment_type: document.getElementById("environment_type").value,
+    main_server: document.getElementById("main_server").value,
+    is_live: document.getElementById("is_live").checked,
+    description: document.getElementById("product_description").value,
   };
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -274,10 +323,8 @@ async function updateProduct() {
   alert("Cập nhật thành công");
 
   fetchProduct();
-  closeModal("updateProductModal");
+  closeModal("productModal");
 }
-
-const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
 
 async function logout() {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -287,7 +334,5 @@ async function logout() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const emailAvt = document.getElementById("user-email");
-  emailAvt.innerHTML = loginData?.user?.email;
   fetchProduct();
 });

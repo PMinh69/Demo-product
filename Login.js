@@ -27,10 +27,7 @@ async function submitLogin() {
             messageElement.textContent = 'Lỗi: ' + error.message;
             messageElement.style.color = 'red';
         } else {
-            const loginData = {
-                user: data.user
-            };
-            localStorage.setItem('loginData', JSON.stringify(loginData));
+            localStorage.setItem('loginData', JSON.stringify(data.user.email));
 
             messageElement.textContent = 'Đăng nhập thành công!';
             messageElement.style.color = 'green';

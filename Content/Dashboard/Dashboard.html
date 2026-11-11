@@ -12,6 +12,7 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    <script defer src="../../common.js"></script>
     <script src="Dashboard.js" defer></script>
   </head>
   <body>
@@ -19,7 +20,6 @@
       <!-- SIDEBAR -->
       <aside class="sidebar">
         <div>
-          <div class="sidebar-header">Brand's Name</div>
           <div class="sidebar-menu">
             <a href="./Dashboard.html"
               ><button class="active">
@@ -45,6 +45,10 @@
 
       <div class="main-wrapper">
         <header class="header">
+          <div class="brand">
+            <span class="brand-avatar">L</span>
+            <span>Brand's Name</span>
+          </div>
           <div class="header-user">
             <span id="user-email">Admin Lead</span>
             <div class="user-menu">
@@ -57,32 +61,130 @@
         </header>
 
         <main id="main-content">
-          <div class="dashboard-stats">
-            <article class="stat-card stat-card-products">
-              <div class="stat-icon"><i class="fa-solid fa-box"></i></div>
-              <div class="stat-content">
-                <span class="stat-label">Tổng sản phẩm</span>
-                <strong class="stat-value" id="total-products">0</strong>
+          <div class="dashboard-grid">
+            <!-- CỘT TRÁI: SẢN PHẨM VẬN HÀNH -->
+            <div class="card card-left">
+              <div class="card-header">
+                <span class="card-title">SẢN PHẨM VẬN HÀNH</span>
               </div>
-            </article>
 
-            <article class="stat-card stat-card-active">
-              <div class="stat-icon">
-                <i class="fa-solid fa-circle-check"></i>
+              <div class="stat-group">
+                <h1 class="stat-number-main" id="total-products">0</h1>
+                <div class="stat-subtext">
+                  <p>
+                    <strong id="total-active-products">0</strong> Đang hoạt động
+                  </p>
+                  <p class="text-muted">
+                    <span id="total-inactive-products">0</span> Tạm ngưng
+                  </p>
+                </div>
               </div>
-              <div class="stat-content">
-                <span class="stat-label">Tổng Active</span>
-                <strong class="stat-value" id="total-active-products">0</strong>
-              </div>
-            </article>
 
-            <article class="stat-card stat-card-sites">
-              <div class="stat-icon"><i class="fa-solid fa-globe"></i></div>
-              <div class="stat-content">
-                <span class="stat-label">Tổng Site</span>
-                <strong class="stat-value" id="total-sites">0</strong>
+              <div class="progress-bar-container">
+                <div
+                  class="progress-bar-fill"
+                  id="product-progress-bar"
+                  style="width: 0%"
+                ></div>
               </div>
-            </article>
+
+              <div class="section-divider"></div>
+
+              <div class="squad-section">
+                <span class="section-subtitle">PHÂN BỐ KỸ THUẬT (SQUADS)</span>
+                <div class="squad-list" id="squad-list"></div>
+              </div>
+
+              <a href="../Product/Product.html" class="link-action">
+                Xem chi tiết danh mục sản phẩm
+                <i class="fa-solid fa-arrow-right"></i>
+              </a>
+
+              <div class="chart-section">
+                <div class="chart-header">
+                  <span>ĐỘ ỔN ĐỊNH 7 NGÀY QUA</span>
+                  <span class="text-highlight" id="stability-average">0% Avg</span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="stabilityChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-right">
+              <div class="card-header">
+                <div class="title-with-sync">
+                  <span class="card-title"
+                    >SITES GIÁM SÁT</span
+                  >
+                </div>
+              </div>
+
+              <div class="endpoint-main">
+                <h1 class="stat-number-main" id="total-sites">0</h1>
+                <span class="sync-text">Site</span>
+              </div>
+
+              <!-- Thanh trạng thái 3 phân đoạn -->
+              <div class="multi-progress-container">
+                <div class="multi-progress-bar">
+                  <div
+                    class="bar-segment segment-running"
+                    style="width: 0%"
+                  ></div>
+                  <div
+                    class="bar-segment segment-paused"
+                    style="width: 0%"
+                  ></div>
+                  <div
+                    class="bar-segment segment-stopped"
+                    style="width: 0%"
+                  ></div>
+                </div>
+                <div class="progress-labels">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              <div class="status-grid">
+                <div class="status-col">
+                  <div class="status-header">
+                    <i class="dot dot-cyan"></i> RUNNING
+                  </div>
+                  <div class="status-number" id="running-sites">0</div>
+                  <div class="status-desc">
+                    <span>Đang chạy ổn định</span>
+                    <span class="status-percent" id="running-percent">0%</span>
+                  </div>
+                </div>
+
+                <div class="status-col">
+                  <div class="status-header">
+                    <i class="dot dot-gray"></i> PAUSED
+                  </div>
+                  <div class="status-number" id="paused-sites">0</div>
+                  <div class="status-desc">
+                    <span>Tạm dừng</span>
+                    <span class="status-percent" id="paused-percent">0%</span>
+                  </div>
+                </div>
+
+                <div class="status-col">
+                  <div class="status-header">
+                    <i class="dot dot-red"></i> STOPPED
+                  </div>
+                  <div class="status-number text-red" id="stopped-sites">
+                    0
+                  </div>
+                  <div class="status-desc">
+                    <span>Sự cố</span>
+                    <span class="status-percent text-red" id="stopped-percent">0%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>

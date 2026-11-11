@@ -1,6 +1,7 @@
 const SUPABASE_URL = "https://mphfczktlajxwyspbmmt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
+const productsPerPage = 15;
 const siteColumns = [
   ["application_name", "Tên ứng dụng"],
   ["url_site", "URL Site"],
@@ -10,6 +11,7 @@ const siteColumns = [
   ["status", "Trạng thái"],
   ["ip_server_local", "IP Server nội bộ"],
   ["folder_path", "Đường dẫn thư mục"],
+  ["account_info", "Tài khoản"]
 ];
 
 const siteTypes = {
@@ -27,7 +29,198 @@ const siteStatuses = {
   "-1": "Stop",
 };
 
+function removeAccents(str) {
+  var AccentsMap = [
+    "aàảãáạăằẳẵắặâầẩẫấậ",
+    "AÀẢÃÁẠĂẰẲẴẮẶÂẦẨẪẤẬ",
+    "dđ", "DĐ",
+    "eèẻẽéẹêềểễếệ",
+    "EÈẺẼÉẸÊỀỂỄẾỆ",
+    "iìỉĩíị",
+    "IÌỈĨÍỊ",
+    "oòỏõóọôồổỗốộơờởỡớợ",
+    "OÒỎÕÓỌÔỒỔỖỐỘƠỜỞỠỚỢ",
+    "uùủũúụưừửữứự",
+    "UÙỦŨÚỤƯỪỬỮỨỰ",
+    "yỳỷỹýỵ",
+    "YỲỶỸÝỴ"
+  ];
+  for (var i=0; i<AccentsMap.length; i++) {
+    var re = new RegExp('[' + AccentsMap[i].substr(1) + ']', 'g');
+    var char = AccentsMap[i][0];
+    str = str.replace(re, char);
+  }
+  return str;
+}
+
 let allSitesData = [];
+let siteModalMode = "add";
+let selectedPublicIps = [];
+
+function getPublicIps(value) {
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(
+        value
+          .filter((ip) => ip != null)
+          .map((ip) => String(ip).trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  if (typeof value !== "string" || value.trim() === "") return [];
+
+  const trimmedValue = value.trim();
+  const parsedValue = JSON.parse(trimmedValue);
+  if (Array.isArray(parsedValue)) {
+    return [
+      ...new Set(
+        parsedValue
+          .filter((ip) => ip != null)
+          .map((ip) => String(ip).trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+  return [trimmedValue];
+}
+
+function renderPublicIpDisplay(value) {
+  const ips = getPublicIps(value);
+  if (ips.length === 0) {
+    const emptyIcon = document.createElement("i");
+    emptyIcon.className = "fa-solid fa-minus";
+    emptyIcon.setAttribute("aria-hidden", "true");
+    return emptyIcon;
+  }
+
+  const [firstIp, ...remainingIps] = ips;
+  const firstBadge = document.createElement("span");
+  firstBadge.className = "public-ip-badge";
+  firstBadge.textContent = firstIp;
+
+  if (remainingIps.length === 0) return firstBadge;
+
+  const display = document.createElement("span");
+  display.className = "public-ip-display";
+  display.append(firstBadge);
+
+  const extraIps = document.createElement("span");
+  extraIps.className = "public-ip-extra";
+  extraIps.hidden = true;
+  remainingIps.forEach((ip) => {
+    const badge = document.createElement("span");
+    badge.className = "public-ip-badge";
+    badge.textContent = ip;
+    extraIps.append(badge);
+  });
+  display.append(extraIps);
+
+  const expandButton = document.createElement("button");
+  expandButton.type = "button";
+  expandButton.className = "public-ip-expand";
+  expandButton.setAttribute("onclick", "togglePublicIpDisplay(this)");
+  expandButton.setAttribute("aria-expanded", "false");
+  expandButton.setAttribute(
+    "aria-label",
+    `Hiển thị thêm ${remainingIps.length} IP`,
+  );
+  expandButton.textContent = `+${remainingIps.length}`;
+  display.append(expandButton);
+
+  const collapseButton = document.createElement("button");
+  collapseButton.type = "button";
+  collapseButton.className = "public-ip-collapse";
+  collapseButton.setAttribute("onclick", "togglePublicIpDisplay(this)");
+  collapseButton.setAttribute("aria-expanded", "true");
+  collapseButton.setAttribute("aria-label", "Thu gọn danh sách IP");
+  collapseButton.title = "Thu gọn";
+  collapseButton.hidden = true;
+  const collapseIcon = document.createElement("i");
+  collapseIcon.className = "fa-solid fa-minus";
+  collapseIcon.setAttribute("aria-hidden", "true");
+  collapseButton.append(collapseIcon);
+  display.append(collapseButton);
+
+  return display;
+}
+
+function togglePublicIpDisplay(button) {
+  const display = button.closest(".public-ip-display");
+  const extraIps = display.querySelector(".public-ip-extra");
+  const expandButton = display.querySelector(".public-ip-expand");
+  const collapseButton = display.querySelector(".public-ip-collapse");
+  const expanded = extraIps.hidden;
+
+  extraIps.hidden = !expanded;
+  expandButton.hidden = expanded;
+  collapseButton.hidden = !expanded;
+  expandButton.setAttribute("aria-expanded", String(expanded));
+  collapseButton.setAttribute("aria-expanded", String(expanded));
+}
+
+function renderPublicIps(ips) {
+  const list = document.getElementById("ip_server_list");
+  selectedPublicIps = getPublicIps(ips);
+  const badges = selectedPublicIps.map((ip, index) => {
+    const badge = document.createElement("span");
+    badge.className = "public-ip-badge";
+    const label = document.createElement("span");
+    label.textContent = ip;
+    badge.append(label);
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "public-ip-remove-button";
+    removeButton.setAttribute("onclick", `removePublicIp(${index})`);
+    removeButton.setAttribute("aria-label", `Xóa IP ${ip}`);
+    removeButton.textContent = "×";
+    badge.append(removeButton);
+    return badge;
+  });
+  list.replaceChildren(...badges);
+}
+
+function renderPublicIpOptions() {
+  const options = document.getElementById("ip_server_options");
+  const availableIps = [
+    ...new Set([...window.ipPublicAddresses, ...selectedPublicIps]),
+  ].filter((ip) => !selectedPublicIps.includes(ip));
+  const buttons = availableIps.map((ip, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "public-ip-option";
+    button.setAttribute("onclick", `selectPublicIp(${index})`);
+    button.textContent = ip;
+    return button;
+  });
+  options.replaceChildren(...buttons);
+}
+
+function removePublicIp(index) {
+  renderPublicIps(selectedPublicIps.filter((_, ipIndex) => ipIndex !== index));
+  renderPublicIpOptions();
+}
+
+function selectPublicIp(index) {
+  const availableIps = [
+    ...new Set([...window.ipPublicAddresses, ...selectedPublicIps]),
+  ].filter((ip) => !selectedPublicIps.includes(ip));
+  const ip = availableIps[index];
+  if (ip === undefined) return;
+
+  renderPublicIps([...selectedPublicIps, ip]);
+  renderPublicIpOptions();
+}
+
+function togglePublicIpOptions() {
+  const options = document.getElementById("ip_server_options");
+  const toggle = document.getElementById("public-ip-toggle");
+  options.hidden = !options.hidden;
+  toggle.setAttribute("aria-expanded", String(!options.hidden));
+  if (!options.hidden) renderPublicIpOptions();
+}
 
 async function fetchSite() {
   const siteBody = document.getElementById("site-body");
@@ -79,12 +272,19 @@ async function exportSitesJson() {
 function addOption(sites) {
   const ipSelect = document.getElementById("filter-ip");
   const uniqueIps = [
-    ...new Set(sites.map((site) => site.ip_server).filter(Boolean)),
+    ...new Set(sites.flatMap((site) => getPublicIps(site.ip_server))),
   ];
-
-  ipSelect.innerHTML =
-    `<option value="">IP Server</option>` +
-    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "IP Server";
+  const options = [placeholder];
+  uniqueIps.forEach((ip) => {
+    const option = document.createElement("option");
+    option.value = ip;
+    option.textContent = ip;
+    options.push(option);
+  });
+  ipSelect.replaceChildren(...options);
 }
 
 function renderSites(sites) {
@@ -92,61 +292,91 @@ function renderSites(sites) {
   if (!siteBody) return;
 
   if (!sites || sites.length === 0) {
-    siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không tìm thấy site phù hợp.</td></tr>`;
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = siteColumns.length + 1;
+    cell.style.textAlign = "center";
+    cell.textContent = "Không tìm thấy site phù hợp.";
+    row.append(cell);
+    siteBody.replaceChildren(row);
     return;
   }
 
-  siteBody.innerHTML = sites
-    .map((site) => {
-      return `
-      <tr>
-        ${siteColumns
-          .map(([column]) => {
-            let value = site?.[column] ?? "";
+  const rows = sites.map((site) => {
+    const row = document.createElement("tr");
 
-            if (column === "type") {
-              const typeClass = `site-type-${value}`;
-              value = `<span class="site-type-badge ${typeClass}">${siteTypes[value]}</span>`;
-            }
+    siteColumns.forEach(([column]) => {
+      const cell = document.createElement("td");
+      const value = site?.[column] ?? "";
 
-            if (column === "status") {
-              const statusClass =
-                String(value) === "1"
-                  ? "site-status-run"
-                  : String(value) === "0"
-                    ? "site-status-pause"
-                    : "site-status-stop";
-              value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value]}</span>`;
-            }
+      if (column === "ip_server") {
+        cell.append(renderPublicIpDisplay(value));
+      } else if (value === "") {
+        const emptyIcon = document.createElement("i");
+        emptyIcon.className = "fa-solid fa-minus";
+        emptyIcon.setAttribute("aria-hidden", "true");
+        cell.append(emptyIcon);
+      } else if (column === "type") {
+        const typeKey = String(value);
+        const badge = document.createElement("span");
+        badge.className = `site-type-badge site-type-${typeKey}`;
+        badge.textContent = siteTypes[typeKey] ?? String(value);
+        cell.append(badge);
+      } else if (column === "status") {
+        const statusKey = String(value);
+        const statusClass =
+          statusKey === "1"
+            ? "site-status-run"
+            : statusKey === "0"
+              ? "site-status-pause"
+              : "site-status-stop";
+        const badge = document.createElement("span");
+        badge.className = `site-status ${statusClass}`;
+        const dot = document.createElement("span");
+        dot.className = "status-dot";
+        badge.append(dot, document.createTextNode(siteStatuses[statusKey] ?? String(value)));
+        cell.append(badge);
+      } else if (column === "url_site") {
+        const link = document.createElement("a");
+        link.href = String(value);
+        link.textContent = String(value);
+        cell.append(link);
+      } else {
+        cell.textContent = String(value);
+      }
 
-            if (column === "url_site") {
-              return `<td><a href="${value}">${value}</a></td>`;
-            }
+      row.append(cell);
+    });
 
-            return `<td>${value}</td>`;
-          })
-          .join("")}
-          <td>
-            <div class="site-table-button">
-              <button type="button" class="site-row-button site-update" onclick="openUpdateModal(${site.id})">
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-              </button>
-              <button type="button" class="site-row-button site-delete" onclick="deleteModal(${site.id})">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </td>
-      </tr>
-    `;
-    })
-    .join("");
+    const actionCell = document.createElement("td");
+    const actions = document.createElement("div");
+    actions.className = "site-table-button";
+    [
+      ["site-update", "fa-pen-to-square", "openUpdateModal"],
+      ["site-delete", "fa-trash", "deleteModal"],
+    ].forEach(([buttonClass, iconClass, action]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `site-row-button ${buttonClass}`;
+      button.setAttribute("onclick", `${action}(${site.id})`);
+      const icon = document.createElement("i");
+      icon.className = `fa-solid ${iconClass}`;
+      icon.setAttribute("aria-hidden", "true");
+      button.append(icon);
+      actions.append(button);
+    });
+    actionCell.append(actions);
+    row.append(actionCell);
+    return row;
+  });
+  siteBody.replaceChildren(...rows);
 }
 
 function RenderFilter() {
-  const keyword = document
+  const keyword = removeAccents(document
     .getElementById("site-search")
     .value.toLowerCase()
-    .trim();
+    .trim());
   const selectedIp = document.getElementById("filter-ip").value;
   const selectedType = document.getElementById("filter-type").value;
   const selectedStatus = document.getElementById("filter-status").value;
@@ -154,7 +384,8 @@ function RenderFilter() {
   const filtered = allSitesData.filter((site) => {
     const name = String(site.application_name || "").toLowerCase();
     const matchKeyword = keyword === "" || name.includes(keyword);
-    const matchIp = selectedIp === "" || String(site.ip_server) === selectedIp;
+    const matchIp =
+      selectedIp === "" || getPublicIps(site.ip_server).includes(selectedIp);
     const matchType = selectedType === "" || String(site.type) === selectedType;
     const matchStatus =
       selectedStatus === "" || String(site.status) === selectedStatus;
@@ -199,13 +430,6 @@ async function confirmDeleteSite() {
   closeModal("deleteSiteModal");
 }
 
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.style.display = "flex";
-  }
-}
-
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
@@ -213,11 +437,35 @@ function closeModal(modalId) {
   }
 }
 
+function openSiteModal(mode) {
+  document.getElementById("siteForm").reset();
+  document.getElementById("site_id").value = "";
+  renderPublicIps([]);
+  document.getElementById("ip_server_options").hidden = true;
+  document
+    .getElementById("public-ip-toggle")
+    .setAttribute("aria-expanded", "false");
+  siteModalMode = mode;
+  document.getElementById("site-modal-title").textContent =
+    mode === "add" ? "Thêm Site" : "Cập nhật Site";
+  const modal = document.getElementById("siteModal");
+  modal.style.display = "flex";
+}
+
+function submitSiteModal(event) {
+  event.preventDefault();
+  if (siteModalMode === "add") {
+    addModal();
+  } else {
+    updateModal();
+  }
+}
+
 async function addModal() {
   const formData = {
     application_name: document.getElementById("application_name").value,
     url_site: document.getElementById("url_site").value,
-    ip_server: document.getElementById("ip_server").value,
+    ip_server: getSelectedPublicIps(),
     ip_server_local: document.getElementById("ip_server_local").value,
     type: document.getElementById("type").value
       ? Number(document.getElementById("type").value)
@@ -240,17 +488,12 @@ async function addModal() {
   const siteBody = document.getElementById("site-body");
   siteBody.innerHTML = ``;
   fetchSite();
-  closeModal("addModal");
+  closeModal("siteModal");
 
   alert("Thêm mới thành công");
 }
 
 async function openUpdateModal(site_id) {
-  const modal = document.getElementById("updateModal");
-  if (modal) {
-    modal.style.display = "flex";
-  }
-
   const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY,
@@ -268,40 +511,39 @@ async function openUpdateModal(site_id) {
   }
   if (siteData && siteData.length > 0) {
     const site = siteData[0];
-    document.getElementById("updateId").value = site_id;
-    document.getElementById("update_application_name").value =
-      site.application_name;
-    document.getElementById("update_url_site").value = site.url_site || "";
-    document.getElementById("update_ip_server").value = site.ip_server || "";
-    document.getElementById("update_ip_server_local").value =
+    openSiteModal("update");
+    document.getElementById("site_id").value = site.id;
+    document.getElementById("application_name").value =
+      site.application_name || "";
+    document.getElementById("url_site").value = site.url_site || "";
+    renderPublicIps(getPublicIps(site.ip_server));
+    document.getElementById("ip_server_local").value =
       site.ip_server_local || "";
-    document.getElementById("update_type").value = site.type;
-    document.getElementById("update_status").value = site.status;
-
-    document.getElementById("update_folder_path").value =
-      site.folder_path || "";
-    document.getElementById("update_note").value = site.note || "";
+    document.getElementById("type").value = site.type ?? "";
+    document.getElementById("status").value = site.status ?? "";
+    document.getElementById("folder_path").value = site.folder_path || "";
+    document.getElementById("note").value = site.note || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", site_id);
   }
 }
 
 async function updateModal() {
-  const site_id = document.getElementById("updateId").value;
+  const site_id = document.getElementById("site_id").value;
 
   const formData = {
-    application_name: document.getElementById("update_application_name").value,
-    url_site: document.getElementById("update_url_site").value,
-    ip_server: document.getElementById("update_ip_server").value,
-    ip_server_local: document.getElementById("update_ip_server_local").value,
-    type: Number(document.getElementById("update_type").value),
-    status: document.getElementById("update_status").value,
-    folder_path: document.getElementById("update_folder_path").value,
-    note: document.getElementById("update_note").value,
+    application_name: document.getElementById("application_name").value,
+    url_site: document.getElementById("url_site").value,
+    ip_server: getSelectedPublicIps(),
+    ip_server_local: document.getElementById("ip_server_local").value,
+    type: Number(document.getElementById("type").value),
+    status: document.getElementById("status").value,
+    folder_path: document.getElementById("folder_path").value,
+    note: document.getElementById("note").value,
   };
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { siteError } = await supabase
+  const { error: siteError } = await supabase
     .from("site")
     .update([formData])
     .eq("id", site_id)
@@ -317,10 +559,8 @@ async function updateModal() {
   const siteBody = document.getElementById("site-body");
   siteBody.innerHTML = ``;
   fetchSite();
-  closeModal("updateModal");
+  closeModal("siteModal");
 }
-
-const loginData = JSON.parse(localStorage.getItem("loginData") || "null");
 
 async function logout() {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -329,8 +569,6 @@ async function logout() {
   window.location.href = "../../Login.html";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const emailAvt = document.getElementById("user-email");
-  emailAvt.innerHTML = loginData?.user?.email;
-  fetchSite();
-});
+function getSelectedPublicIps() {
+  return [...selectedPublicIps];
+}
