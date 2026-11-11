@@ -366,7 +366,8 @@ async function submitProduct(event) {
     supabase,
     "product",
     "name",
-    "product-id"
+    "product-id",
+    "product"
   );
 
   if (!isDuplicate) return;

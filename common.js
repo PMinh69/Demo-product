@@ -47,7 +47,7 @@ function validateRequired(inputId, message) {
   return check();
 }
 
-async function validateDuplicate(inputId, supabase, table, column, id) {
+async function validateDuplicate(inputId, supabase, table, column, id, message) {
   const input = document.getElementById(inputId);
   const errorElement = document.getElementById(`${inputId}-error`);
 
@@ -81,7 +81,7 @@ async function validateDuplicate(inputId, supabase, table, column, id) {
       });
 
       if (isDuplicate) {
-        errorElement.textContent = "Tên Product đã tồn tại!";
+        errorElement.textContent = `Tên ${message} đã tồn tại!`;
         errorElement.style.display = "block";
         return false;
       }

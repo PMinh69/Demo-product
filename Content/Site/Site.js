@@ -160,7 +160,7 @@ function togglePublicIpDisplay(button) {
 }
 
 function renderPublicIps(ips) {
-  const list = document.getElementById("ip_server_list");
+  const list = document.getElementById("ip-server-list");
   selectedPublicIps = getPublicIps(ips);
   const badges = selectedPublicIps.map((ip, index) => {
     const badge = document.createElement("span");
@@ -521,7 +521,7 @@ function closeModal(modalId) {
 
 function openSiteModal(mode) {
   document.getElementById("siteForm").reset();
-  document.getElementById("site_id").value = "";
+  document.getElementById("site-id").value = "";
   renderPublicIps([]);
   siteModalMode = mode;
   document.getElementById("site-modal-title").textContent =
@@ -530,27 +530,50 @@ function openSiteModal(mode) {
   modal.style.display = "flex";
 }
 
-function submitSiteModal() {
+async function submitSiteModal(event) {
+  event.preventDefault();
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const requiredFields = [
+    ["application-name", "Tên ứng dụng không được để trống!"],
+    ["type", "Loại site không được để trống!"],
+    ["status", "Trạng thái không được để trống!"],
+  ];
+  const isRequired = requiredFields
+    .map(([id, message]) => validateRequired(id, message))
+    .every(Boolean);
+  if (!isRequired) return;
+
+  const isDuplicate = await validateDuplicate(
+    "application-name",
+    supabase,
+    "site",
+    "application_name",
+    "site-id",
+    "site"
+  );
+
+  if (!isDuplicate) return;
+
   if (siteModalMode === "add") {
-    addModal();
+    await addModal();
   } else {
-    updateModal();
+    await updateModal();
   }
 }
 
 async function addModal() {
   const formData = {
-    application_name: document.getElementById("application_name").value,
-    url_site: document.getElementById("url_site").value,
+    application_name: document.getElementById("application-name").value.trim(),
+    url_site: document.getElementById("url-site").value,
     ip_server: getSelectedPublicIps(),
-    ip_server_local: document.getElementById("ip_server_local").value,
+    ip_server_local: document.getElementById("ip-server-local").value,
     type: document.getElementById("type").value
       ? Number(document.getElementById("type").value)
       : null,
     status: document.getElementById("status").value
       ? Number(document.getElementById("status").value)
       : null,
-    folder_path: document.getElementById("folder_path").value,
+    folder_path: document.getElementById("folder-path").value,
     note: document.getElementById("note").value,
   };
 
@@ -589,16 +612,16 @@ async function openUpdateModal(site_id) {
   if (siteData && siteData.length > 0) {
     const site = siteData[0];
     openSiteModal("update");
-    document.getElementById("site_id").value = site.id;
-    document.getElementById("application_name").value =
+    document.getElementById("site-id").value = site.id;
+    document.getElementById("application-name").value =
       site.application_name || "";
-    document.getElementById("url_site").value = site.url_site || "";
+    document.getElementById("url-site").value = site.url_site || "";
     renderPublicIps(getPublicIps(site.ip_server));
-    document.getElementById("ip_server_local").value =
+    document.getElementById("ip-server-local").value =
       site.ip_server_local || "";
     document.getElementById("type").value = site.type ?? "";
     document.getElementById("status").value = site.status ?? "";
-    document.getElementById("folder_path").value = site.folder_path || "";
+    document.getElementById("folder-path").value = site.folder_path || "";
     document.getElementById("note").value = site.note || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", site_id);
@@ -606,16 +629,16 @@ async function openUpdateModal(site_id) {
 }
 
 async function updateModal() {
-  const site_id = document.getElementById("site_id").value;
+  const site_id = document.getElementById("site-id").value;
 
   const formData = {
-    application_name: document.getElementById("application_name").value,
-    url_site: document.getElementById("url_site").value,
+    application_name: document.getElementById("application-name").value.trim(),
+    url_site: document.getElementById("url-site").value,
     ip_server: getSelectedPublicIps(),
-    ip_server_local: document.getElementById("ip_server_local").value,
+    ip_server_local: document.getElementById("ip-server-local").value,
     type: Number(document.getElementById("type").value),
     status: document.getElementById("status").value,
-    folder_path: document.getElementById("folder_path").value,
+    folder_path: document.getElementById("folder-path").value,
     note: document.getElementById("note").value,
   };
 
