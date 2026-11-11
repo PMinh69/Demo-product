@@ -1,6 +1,13 @@
 const SUPABASE_URL = "https://mphfczktlajxwyspbmmt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
+const sitesPerPage = 15;
+let currentSitePage = 1;
+let currentFilteredSites = [];
+let currentExistedSitePage = 1;
+let currentFilteredExistedSites = [];
+const selectedExistedSiteIds = new Set();
+
 const productColumns = [
   ["name", "tên dự án"],
   ["description", "mô tả"],
@@ -191,9 +198,20 @@ function renderPublicIpDisplay(value) {
   }
 
   const [firstIp, ...remainingIps] = ips;
+  const escapeHtml = (ip) =>
+    ip.replace(/[&<>"']/g, (character) => {
+      const entities = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[character];
+    });
   const badges = (items) =>
     items
-      .map((ip) => `<span class="public-ip-badge">${ip}</span>`)
+      .map((ip) => `<span class="public-ip-badge">${escapeHtml(ip)}</span>`)
       .join("");
 
   if (remainingIps.length === 0) return badges(ips);
@@ -254,7 +272,6 @@ function renderPublicIps(ips) {
     removeButton.setAttribute("aria-label", `Xóa IP ${ip}`);
     removeButton.addEventListener("click", () => {
       renderPublicIps(selectedPublicIps.filter((selectedIp) => selectedIp !== ip));
-      renderPublicIpOptions();
     });
 
     badge.append(text, removeButton);
@@ -262,41 +279,30 @@ function renderPublicIps(ips) {
   });
 }
 
-function renderPublicIpOptions() {
-  const options = document.getElementById("ip_server_options");
-  const availableIps = [
-    ...new Set([...window.ipPublicAddresses, ...selectedPublicIps]),
-  ];
-  options.replaceChildren();
+function addPublicIp() {
+  const input = document.getElementById("public-ip-input");
+  const ip = input.value.trim();
+  if (!ip) {
+    input.focus();
+    return;
+  }
 
-  availableIps.forEach((ip) => {
-    const label = document.createElement("label");
-    label.className = "public-ip-option";
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = selectedPublicIps.includes(ip);
-    checkbox.addEventListener("change", () => {
-      const nextIps = checkbox.checked
-        ? [...selectedPublicIps, ip]
-        : selectedPublicIps.filter((selectedIp) => selectedIp !== ip);
-      renderPublicIps(nextIps);
-      renderPublicIpOptions();
-    });
-
-    const text = document.createElement("span");
-    text.textContent = ip;
-    label.append(checkbox, text);
-    options.append(label);
-  });
+  if (!selectedPublicIps.includes(ip)) {
+    renderPublicIps([...selectedPublicIps, ip]);
+  }
+  input.value = "";
+  input.focus();
 }
 
-function togglePublicIpOptions() {
-  const options = document.getElementById("ip_server_options");
-  const toggle = document.getElementById("public-ip-toggle");
-  options.hidden = !options.hidden;
-  toggle.setAttribute("aria-expanded", String(!options.hidden));
-  if (!options.hidden) renderPublicIpOptions();
+function removePublicIp(index) {
+  renderPublicIps(selectedPublicIps.filter((_, ipIndex) => ipIndex !== index));
+}
+
+function handlePublicIpKeydown(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addPublicIp();
+  }
 }
 
 async function fetchSite() {
@@ -314,7 +320,9 @@ async function fetchSite() {
     .order("id", { ascending: false });
 
   if (!relationData) {
-    siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không có site nào thuộc dự án này.</td></tr>`;
+    allRelationsData = [];
+    allSitesData = [];
+    renderSites([]);
     return;
   }
 
@@ -335,7 +343,7 @@ async function fetchSite() {
   addOption(allSitesData);
 
   if (allSitesData.length === 0) {
-    siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không tìm thấy site phù hợp.</td></tr>`;
+    renderSites([]);
     return;
   }
 
@@ -343,10 +351,33 @@ async function fetchSite() {
 }
 
 function renderSites(sites) {
+  currentFilteredSites = sites || [];
+  currentSitePage = 1;
+  renderSitePage();
+}
+
+function renderSitePage() {
   const siteBody = document.getElementById("site-body");
   if (!siteBody) return;
 
-  siteBody.innerHTML = sites
+  const totalItems = currentFilteredSites.length;
+  const totalPages = Math.ceil(totalItems / sitesPerPage);
+  currentSitePage = Math.max(1, Math.min(currentSitePage, Math.max(1, totalPages)));
+
+  const paginationInfo = document.getElementById("sitePaginationInfo");
+  const paginationControls = document.getElementById("sitePaginationControls");
+  if (totalItems === 0) {
+    siteBody.innerHTML = `<tr><td colspan="${siteColumns.length + 1}" style="text-align: center;">Không tìm thấy site phù hợp.</td></tr>`;
+    paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
+    paginationControls.innerHTML = "";
+    return;
+  }
+
+  const startIndex = (currentSitePage - 1) * sitesPerPage;
+  const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
+
+  siteBody.innerHTML = currentFilteredSites
+    .slice(startIndex, endIndex)
     .map((site) => {
       return `
       <tr>
@@ -405,6 +436,95 @@ function renderSites(sites) {
     `;
     })
     .join("");
+
+  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
+  renderPageControls(
+    paginationControls,
+    currentSitePage,
+    totalPages,
+    "changeSitePage",
+  );
+}
+
+function renderPageControls(controls, currentPage, totalPages, changePageFunction) {
+  if (totalPages <= 1) {
+    controls.innerHTML = "";
+    return;
+  }
+
+  let pages = [];
+
+  if (totalPages <= 6) {
+    pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  } else if (currentPage <= 3) {
+    pages = [1, 2, 3, 4, 5, totalPages];
+  } else if (currentPage >= totalPages - 2) {
+    pages = [
+      1,
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  } else {
+    pages = [
+      1,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
+      totalPages,
+    ];
+  }
+
+  let html = `
+    <button class="pagination-btn"
+      ${currentPage === 1 ? "disabled" : ""}
+      onclick="${changePageFunction}(${currentPage - 1})">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+  `;
+
+  pages.forEach((page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) {
+      html += `<span class="pagination-dots">...</span>`;
+    }
+
+    html += `
+      <button
+        class="pagination-btn ${page === currentPage ? "active" : ""}"
+        onclick="${changePageFunction}(${page})">
+        ${page}
+      </button>
+    `;
+  });
+
+  html += `
+    <button class="pagination-btn"
+      ${currentPage === totalPages ? "disabled" : ""}
+      onclick="${changePageFunction}(${currentPage + 1})">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  `;
+
+  controls.innerHTML = html;
+}
+
+function changeSitePage(page) {
+  const totalPages = Math.ceil(currentFilteredSites.length / sitesPerPage);
+  if (page < 1 || page > totalPages || page === currentSitePage) return;
+
+  currentSitePage = page;
+  renderSitePage();
+}
+
+function changeExistedSitePage(page) {
+  const totalPages = Math.ceil(currentFilteredExistedSites.length / sitesPerPage);
+  if (page < 1 || page > totalPages || page === currentExistedSitePage) return;
+
+  currentExistedSitePage = page;
+  renderExistedSitePage();
 }
 
 function addOption(sites) {
@@ -528,6 +648,10 @@ function openModal(modalId) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   modal.style.display = "none";
+  if (modalId === "addExistedModal") {
+    selectedExistedSiteIds.clear();
+    renderExistedSitePage();
+  }
 }
 
 async function fetchExistedSite() {
@@ -565,6 +689,12 @@ async function fetchExistedSite() {
     (site) => !existedSite.includes(site.id),
   );
   availableSitesData = availableSites;
+  const availableSiteIds = new Set(
+    availableSites.map((site) => String(site.id)),
+  );
+  selectedExistedSiteIds.forEach((siteId) => {
+    if (!availableSiteIds.has(siteId)) selectedExistedSiteIds.delete(siteId);
+  });
   addExistedIpOptions(availableSites);
   renderExistedSites(availableSites);
 }
@@ -584,23 +714,46 @@ function addExistedIpOptions(sites) {
 }
 
 function renderExistedSites(sites) {
+  currentFilteredExistedSites = sites || [];
+  currentExistedSitePage = 1;
+  renderExistedSitePage();
+}
+
+function renderExistedSitePage() {
   const tbody = document.getElementById("existed-site-body");
   if (!tbody) return;
   const totalCols = siteExistedColumns.length + 1;
+  const totalItems = currentFilteredExistedSites.length;
+  const totalPages = Math.ceil(totalItems / sitesPerPage);
+  currentExistedSitePage = Math.max(
+    1,
+    Math.min(currentExistedSitePage, Math.max(1, totalPages)),
+  );
+  const paginationInfo = document.getElementById("existedSitePaginationInfo");
+  const paginationControls = document.getElementById(
+    "existedSitePaginationControls",
+  );
 
-  if (!sites || sites.length === 0) {
+  if (totalItems === 0) {
     tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #9ca3af;">Không có site nào khả dụng để thêm.</td></tr>`;
+    paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
+    paginationControls.innerHTML = "";
+    updateSelectAllExistedCheckbox();
     return;
   }
 
-  tbody.innerHTML = sites
+  const startIndex = (currentExistedSitePage - 1) * sitesPerPage;
+  const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
+  tbody.innerHTML = currentFilteredExistedSites
+    .slice(startIndex, endIndex)
     .map((site) => {
+      const selected = selectedExistedSiteIds.has(String(site.id));
       return `
-      <tr onclick="toggleCheckbox(this, event)" style="cursor: pointer;">
+      <tr class="${selected ? "is-checked" : ""}" onclick="toggleCheckbox(this, event)" style="cursor: pointer;">
         <td style="text-align: center;">
           <div class="checkbox-wrapper-40">
             <label>
-              <input type="checkbox" class="checkbox-control existed-site-checkbox" value="${site.id}" aria-label="Chọn site" />
+              <input type="checkbox" class="checkbox-control existed-site-checkbox" value="${site.id}" aria-label="Chọn site" onchange="toggleExistedSiteCheckbox(this)" ${selected ? "checked" : ""} />
               <span class="checkbox"></span>
             </label>
           </div>
@@ -642,6 +795,15 @@ function renderExistedSites(sites) {
     `;
     })
     .join("");
+
+  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
+  renderPageControls(
+    paginationControls,
+    currentExistedSitePage,
+    totalPages,
+    "changeExistedSitePage",
+  );
+  updateSelectAllExistedCheckbox();
 }
 
 function toggleCheckbox(row, event) {
@@ -654,14 +816,29 @@ function toggleCheckbox(row, event) {
   const checkbox = row.querySelector(".existed-site-checkbox");
   if (checkbox) {
     checkbox.checked = !checkbox.checked;
-    row.classList.toggle("is-checked", checkbox.checked);
+    toggleExistedSiteCheckbox(checkbox);
   }
+}
+
+function toggleExistedSiteCheckbox(checkbox) {
+  if (checkbox.checked) {
+    selectedExistedSiteIds.add(checkbox.value);
+  } else {
+    selectedExistedSiteIds.delete(checkbox.value);
+  }
+  checkbox.closest("tr")?.classList.toggle("is-checked", checkbox.checked);
+  updateSelectAllExistedCheckbox();
 }
 
 function toggleSelectAllExisted(checkAll) {
   const checkboxes = document.querySelectorAll(".existed-site-checkbox");
   checkboxes.forEach((cb) => {
     cb.checked = checkAll.checked;
+    if (checkAll.checked) {
+      selectedExistedSiteIds.add(cb.value);
+    } else {
+      selectedExistedSiteIds.delete(cb.value);
+    }
     const rowElement = cb.closest("tr");
     if (rowElement) {
       if (checkAll.checked) {
@@ -671,13 +848,27 @@ function toggleSelectAllExisted(checkAll) {
       }
     }
   });
+  updateSelectAllExistedCheckbox();
+}
+
+function updateSelectAllExistedCheckbox() {
+  const checkAll = document.getElementById("selectAllExistedSites");
+  if (!checkAll) return;
+
+  const checkboxes = Array.from(
+    document.querySelectorAll(".existed-site-checkbox"),
+  );
+  const selectedCount = checkboxes.filter((checkbox) =>
+    selectedExistedSiteIds.has(checkbox.value),
+  ).length;
+  checkAll.checked =
+    checkboxes.length > 0 && selectedCount === checkboxes.length;
+  checkAll.indeterminate =
+    selectedCount > 0 && selectedCount < checkboxes.length;
 }
 
 async function addExistedSites() {
-  const checkboxes = document.querySelectorAll(
-    ".existed-site-checkbox:checked",
-  );
-  const selectedSiteIds = Array.from(checkboxes).map((cb) => cb.value);
+  const selectedSiteIds = [...selectedExistedSiteIds];
 
   if (selectedSiteIds.length === 0) {
     alert("Vui lòng chọn ít nhất một site!");
@@ -704,6 +895,7 @@ async function addExistedSites() {
     return;
   }
 
+  selectedExistedSiteIds.clear();
   closeModal("addExistedModal");
   fetchSite();
   fetchExistedSite();
@@ -713,8 +905,6 @@ function openSiteModal(mode) {
   document.getElementById("siteForm").reset();
   document.getElementById("site_id").value = "";
   renderPublicIps([]);
-  document.getElementById("ip_server_options").hidden = true;
-  document.getElementById("public-ip-toggle").setAttribute("aria-expanded", "false");
   siteModalMode = mode;
   document.getElementById("site-modal-title").textContent =
     mode === "add" ? "Thêm Site" : "Cập nhật Site";
@@ -731,8 +921,14 @@ function submitSiteModal(event) {
 }
 
 async function addModal() {
+  const nameInput = document.getElementById("application_name");
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (!(await validateUniqueName(nameInput, supabase, "site", "application_name"))) {
+    return;
+  }
+
   const formData = {
-    application_name: document.getElementById("application_name").value,
+    application_name: nameInput.value.trim(),
     url_site: document.getElementById("url_site").value,
     ip_server: getSelectedPublicIps(),
     ip_server_local: document.getElementById("ip_server_local").value,
@@ -746,7 +942,6 @@ async function addModal() {
     note: document.getElementById("note").value,
   };
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { data: siteData, error: siteError } = await supabase
     .from("site")
     .insert([formData])
@@ -834,9 +1029,22 @@ async function openUpdateModal(site_id) {
 
 async function updateModal() {
   const site_id = document.getElementById("site_id").value;
+  const nameInput = document.getElementById("application_name");
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  if (
+    !(await validateUniqueName(
+      nameInput,
+      supabase,
+      "site",
+      "application_name",
+      site_id,
+    ))
+  ) {
+    return;
+  }
 
   const formData = {
-    application_name: document.getElementById("application_name").value,
+    application_name: nameInput.value.trim(),
     url_site: document.getElementById("url_site").value,
     ip_server: getSelectedPublicIps(),
     ip_server_local: document.getElementById("ip_server_local").value,
@@ -849,7 +1057,6 @@ async function updateModal() {
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get("product_id");
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const { error: siteError } = await supabase
     .from("site")
     .update([formData])

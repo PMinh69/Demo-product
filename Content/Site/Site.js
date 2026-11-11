@@ -1,7 +1,10 @@
 const SUPABASE_URL = "https://mphfczktlajxwyspbmmt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
-const productsPerPage = 15;
+const sitesPerPage = 15;
+let currentSitePage = 1;
+let currentFilteredSites = [];
+
 const siteColumns = [
   ["application_name", "Tên ứng dụng"],
   ["url_site", "URL Site"],
@@ -72,17 +75,18 @@ function getPublicIps(value) {
   if (typeof value !== "string" || value.trim() === "") return [];
 
   const trimmedValue = value.trim();
-  const parsedValue = JSON.parse(trimmedValue);
-  if (Array.isArray(parsedValue)) {
-    return [
-      ...new Set(
-        parsedValue
-          .filter((ip) => ip != null)
-          .map((ip) => String(ip).trim())
-          .filter(Boolean),
-      ),
-    ];
-  }
+    const parsedValue = JSON.parse(trimmedValue);
+    if (Array.isArray(parsedValue)) {
+      return [
+        ...new Set(
+          parsedValue
+            .filter((ip) => ip != null)
+            .map((ip) => String(ip).trim())
+            .filter(Boolean),
+        ),
+      ];
+    }
+
   return [trimmedValue];
 }
 
@@ -121,11 +125,6 @@ function renderPublicIpDisplay(value) {
   expandButton.type = "button";
   expandButton.className = "public-ip-expand";
   expandButton.setAttribute("onclick", "togglePublicIpDisplay(this)");
-  expandButton.setAttribute("aria-expanded", "false");
-  expandButton.setAttribute(
-    "aria-label",
-    `Hiển thị thêm ${remainingIps.length} IP`,
-  );
   expandButton.textContent = `+${remainingIps.length}`;
   display.append(expandButton);
 
@@ -182,44 +181,30 @@ function renderPublicIps(ips) {
   list.replaceChildren(...badges);
 }
 
-function renderPublicIpOptions() {
-  const options = document.getElementById("ip_server_options");
-  const availableIps = [
-    ...new Set([...window.ipPublicAddresses, ...selectedPublicIps]),
-  ].filter((ip) => !selectedPublicIps.includes(ip));
-  const buttons = availableIps.map((ip, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "public-ip-option";
-    button.setAttribute("onclick", `selectPublicIp(${index})`);
-    button.textContent = ip;
-    return button;
-  });
-  options.replaceChildren(...buttons);
+function addPublicIp() {
+  const input = document.getElementById("public-ip-input");
+  const ip = input.value.trim();
+  if (!ip) {
+    input.focus();
+    return;
+  }
+
+  if (!selectedPublicIps.includes(ip)) {
+    renderPublicIps([...selectedPublicIps, ip]);
+  }
+  input.value = "";
+  input.focus();
 }
 
 function removePublicIp(index) {
   renderPublicIps(selectedPublicIps.filter((_, ipIndex) => ipIndex !== index));
-  renderPublicIpOptions();
 }
 
-function selectPublicIp(index) {
-  const availableIps = [
-    ...new Set([...window.ipPublicAddresses, ...selectedPublicIps]),
-  ].filter((ip) => !selectedPublicIps.includes(ip));
-  const ip = availableIps[index];
-  if (ip === undefined) return;
-
-  renderPublicIps([...selectedPublicIps, ip]);
-  renderPublicIpOptions();
-}
-
-function togglePublicIpOptions() {
-  const options = document.getElementById("ip_server_options");
-  const toggle = document.getElementById("public-ip-toggle");
-  options.hidden = !options.hidden;
-  toggle.setAttribute("aria-expanded", String(!options.hidden));
-  if (!options.hidden) renderPublicIpOptions();
+function handlePublicIpKeydown(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addPublicIp();
+  }
 }
 
 async function fetchSite() {
@@ -288,10 +273,23 @@ function addOption(sites) {
 }
 
 function renderSites(sites) {
+  currentFilteredSites = sites || [];
+  currentSitePage = 1;
+  renderSitePage();
+}
+
+function renderSitePage() {
   const siteBody = document.getElementById("site-body");
   if (!siteBody) return;
 
-  if (!sites || sites.length === 0) {
+  const totalItems = currentFilteredSites.length;
+  const totalPages = Math.ceil(totalItems / sitesPerPage);
+  currentSitePage = Math.max(1, Math.min(currentSitePage, Math.max(1, totalPages)));
+
+  const paginationInfo = document.getElementById("sitePaginationInfo");
+  const paginationControls = document.getElementById("sitePaginationControls");
+
+  if (totalItems === 0) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.colSpan = siteColumns.length + 1;
@@ -299,10 +297,14 @@ function renderSites(sites) {
     cell.textContent = "Không tìm thấy site phù hợp.";
     row.append(cell);
     siteBody.replaceChildren(row);
+    paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
+    paginationControls.innerHTML = "";
     return;
   }
 
-  const rows = sites.map((site) => {
+  const startIndex = (currentSitePage - 1) * sitesPerPage;
+  const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
+  const rows = currentFilteredSites.slice(startIndex, endIndex).map((site) => {
     const row = document.createElement("tr");
 
     siteColumns.forEach(([column]) => {
@@ -370,6 +372,86 @@ function renderSites(sites) {
     return row;
   });
   siteBody.replaceChildren(...rows);
+  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
+  renderPageControls(
+    paginationControls,
+    currentSitePage,
+    totalPages,
+    "changeSitePage",
+  );
+}
+
+function renderPageControls(controls, currentPage, totalPages, changePageFunction) {
+  if (totalPages <= 1) {
+    controls.innerHTML = "";
+    return;
+  }
+
+  let pages = [];
+
+  if (totalPages <= 6) {
+    pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  } else if (currentPage <= 3) {
+    pages = [1, 2, 3, 4, 5, totalPages];
+  } else if (currentPage >= totalPages - 2) {
+    pages = [
+      1,
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  } else {
+    pages = [
+      1,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
+      totalPages,
+    ];
+  }
+
+  let html = `
+    <button class="pagination-btn"
+      ${currentPage === 1 ? "disabled" : ""}
+      onclick="${changePageFunction}(${currentPage - 1})">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+  `;
+
+  pages.forEach((page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) {
+      html += `<span class="pagination-dots">...</span>`;
+    }
+
+    html += `
+      <button
+        class="pagination-btn ${page === currentPage ? "active" : ""}"
+        onclick="${changePageFunction}(${page})">
+        ${page}
+      </button>
+    `;
+  });
+
+  html += `
+    <button class="pagination-btn"
+      ${currentPage === totalPages ? "disabled" : ""}
+      onclick="${changePageFunction}(${currentPage + 1})">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  `;
+
+  controls.innerHTML = html;
+}
+
+function changeSitePage(page) {
+  const totalPages = Math.ceil(currentFilteredSites.length / sitesPerPage);
+  if (page < 1 || page > totalPages || page === currentSitePage) return;
+
+  currentSitePage = page;
+  renderSitePage();
 }
 
 function RenderFilter() {
@@ -441,10 +523,6 @@ function openSiteModal(mode) {
   document.getElementById("siteForm").reset();
   document.getElementById("site_id").value = "";
   renderPublicIps([]);
-  document.getElementById("ip_server_options").hidden = true;
-  document
-    .getElementById("public-ip-toggle")
-    .setAttribute("aria-expanded", "false");
   siteModalMode = mode;
   document.getElementById("site-modal-title").textContent =
     mode === "add" ? "Thêm Site" : "Cập nhật Site";
@@ -452,8 +530,7 @@ function openSiteModal(mode) {
   modal.style.display = "flex";
 }
 
-function submitSiteModal(event) {
-  event.preventDefault();
+function submitSiteModal() {
   if (siteModalMode === "add") {
     addModal();
   } else {
@@ -572,3 +649,7 @@ async function logout() {
 function getSelectedPublicIps() {
   return [...selectedPublicIps];
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetchSite();
+});

@@ -322,7 +322,13 @@ header.header {
 /* MAIN CONTENT */
 main#main-content {
   flex-grow: 1;
-  padding: 30px;
+  padding: 20px 30px;
   overflow-y: auto;
   color: #ffffff;
+}
+
+.validation-error {
+  color: #dc3545;
+  font-size: 13px;
+  margin-top: 5px;
 }

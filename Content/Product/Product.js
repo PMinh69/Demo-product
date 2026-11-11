@@ -37,7 +37,8 @@ function removeAccents(str) {
   var AccentsMap = [
     "aàảãáạăằẳẵắặâầẩẫấậ",
     "AÀẢÃÁẠĂẰẲẴẮẶÂẦẨẪẤẬ",
-    "dđ", "DĐ",
+    "dđ",
+    "DĐ",
     "eèẻẽéẹêềểễếệ",
     "EÈẺẼÉẸÊỀỂỄẾỆ",
     "iìỉĩíị",
@@ -47,10 +48,10 @@ function removeAccents(str) {
     "uùủũúụưừửữứự",
     "UÙỦŨÚỤƯỪỬỮỨỰ",
     "yỳỷỹýỵ",
-    "YỲỶỸÝỴ"    
+    "YỲỶỸÝỴ",
   ];
-  for (var i=0; i<AccentsMap.length; i++) {
-    var re = new RegExp('[' + AccentsMap[i].substr(1) + ']', 'g');
+  for (var i = 0; i < AccentsMap.length; i++) {
+    var re = new RegExp("[" + AccentsMap[i].substr(1) + "]", "g");
     var char = AccentsMap[i][0];
     str = str.replace(re, char);
   }
@@ -58,7 +59,6 @@ function removeAccents(str) {
 }
 
 let allProductsData = [];
-let productModalMode = "add";
 
 async function fetchProduct() {
   try {
@@ -81,86 +81,130 @@ async function fetchProduct() {
 }
 
 function renderProducts(products) {
-  const productBody = document.getElementById("product-body");
+  currentFilteredData = products || [];
+  currentPage = 1;
+  renderProductPage();
+}
 
-  if (!products || products.length === 0) {
-    productBody.innerHTML = `<tr><td colspan="${productColumns.length + 1}" style="text-align: center;">Không tìm thấy sản phẩm phù hợp.</td></tr>`;
+function renderProductPage() {
+  const productBody = document.getElementById("product-body");
+  const paginationInfo = document.getElementById("paginationInfo");
+
+  const totalItems = currentFilteredData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  currentPage = Math.max(1, Math.min(currentPage, Math.max(1, totalPages)));
+
+  if (totalItems === 0) {
+    productBody.innerHTML = `
+    <tr>
+    <td colspan="${productColumns.length + 1}" style="text-align: center;">
+    Không tìm thấy sản phẩm phù hợp.
+    </td>
+    </tr>
+    `;
+
+    paginationInfo.textContent = "Hiển thị 0 đến 0 của 0 bản ghi";
+    document.getElementById("paginationControls").innerHTML = "";
     return;
   }
 
-  productBody.innerHTML = products
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+
+  const currentProducts = currentFilteredData.slice(startIndex, endIndex);
+
+  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
+
+  productBody.innerHTML = currentProducts
     .map(
       (product) => `
-      <tr>
-        ${productColumns
-          .map(([column]) => {
-            let value = product?.[column] ?? "";
+    <tr>
+    ${productColumns
+      .map(([column]) => {
+        let value = product?.[column] ?? "";
 
-            if (typeof value === "string" && value.trim() === "") {
-              return `<td><span class="product-empty-value">Chưa cập nhật</span></td>`;
-            }
+        if (typeof value === "string" && value.trim() === "") {
+          return `<td><span class="product-empty-value">Chưa cập nhật</span></td>`;
+        }
 
-            if (column === "name") {
-              value = `<span class="product-name">${value}</span>`;
-            } else if (column === "team_code") {
-              const teamClass =
-                teamBadgeClasses[String(value).trim().toLowerCase()] || "";
-              value = `<span class="product-entity-tag ${teamClass}">${value}</span>`;
-            } else if (column === "partner_name") {
-              value = `<span class="product-entity-tag">${value}</span>`;
-            } else if (column === "main_server") {
-              value = `<span class="product-server">${value}</span>`;
-            } else if (column === "is_live") {
-              const statusClass =
-                value === true ? "badge-active" : "badge-inactive";
-              const statusText = value === true ? "Active" : "Inactive";
-              value = `<span class="product-status ${statusClass}"><span class="status-dot"></span>${statusText}</span>`;
-            } else if (column === "environment_type") {
-              value = `<span class="env-badge env-${value}">${environmentTypes[value] ?? value}</span>`;
-            } else {
-              value = value;
-            }
+        if (column === "name") {
+          value = `<span class="product-name">${value}</span>`;
+        } else if (column === "team_code") {
+          const teamClass =
+            teamBadgeClasses[String(value).trim().toLowerCase()] || "";
+          value = `<span class="product-entity-tag ${teamClass}">${value}</span>`;
+        } else if (column === "partner_name") {
+          value = `<span class="product-entity-tag">${value}</span>`;
+        } else if (column === "main_server") {
+          value = `<span class="product-server">${value}</span>`;
+        } else if (column === "is_live") {
+          const statusClass =
+            value === true ? "badge-active" : "badge-inactive";
+          const statusText = value === true ? "Active" : "Inactive";
 
-            return `<td>${value}</td>`;
-          })
-          .join("")}
+          value = `
+              <span class="product-status ${statusClass}">
+              <span class="status-dot"></span>${statusText}
+              </span>`;
+        } else if (column === "environment_type") {
+          value = `<span class="env-badge env-${value}">
+              ${environmentTypes[value] ?? value}
+              </span>`;
+        }
+
+        return `<td>${value}</td>`;
+      })
+      .join("")}
+          
           <td>
-            <div class="product-table-button">
-              <button class="product-row-button product-detail" onclick="productDetail(${product.id})">
-                <i class="fa-solid fa-eye" aria-hidden="true"></i>
-              </button>
-              <button class="product-row-button product-update" onclick="openUpdateModal(${product.id})">
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-              </button>
-              <button class="product-row-button product-delete" onclick="openDeleteModal(${product.id})">
-                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              </button>
+          <div class="product-table-button">
+          <button class="product-row-button product-detail"
+          onclick="productDetail(${product.id})">
+          <i class="fa-solid fa-eye" aria-hidden="true"></i>
+            </button>
+
+            <button class="product-row-button product-update"
+            onclick="openUpdateModal(${product.id})">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+            </button>
+            
+            <button class="product-row-button product-delete"
+            onclick="openDeleteModal(${product.id})">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            </button>
             </div>
-          </td>
-      </tr>
-    `,
+            </td>
+            </tr>
+            `,
     )
     .join("");
+
+  renderPagination(totalPages);
 }
 
 function RenderFilter() {
-  const keyword = removeAccents(document
-    .getElementById("product-search")
-    .value.toLowerCase()
-    .trim());
+  const keyword = removeAccents(
+    document.getElementById("product-search").value.toLowerCase().trim(),
+  );
+
   const selectedStatus = document.getElementById("filter-status").value;
   const selectedEnvironment =
     document.getElementById("filter-environment").value;
   const selectedTeam = document.getElementById("filter-team").value;
 
   const filtered = allProductsData.filter((product) => {
-    const name = String(product.name || "").toLowerCase();
+    const name = removeAccents(String(product.name || "").toLowerCase());
+
     const matchKeyword = keyword === "" || name.includes(keyword);
+
     const matchStatus =
       selectedStatus === "" || String(product.is_live) === selectedStatus;
+
     const matchEnvironment =
       selectedEnvironment === "" ||
       String(product.environment_type) === selectedEnvironment;
+
     const matchTeam =
       selectedTeam === "" || String(product.team_code) === selectedTeam;
 
@@ -168,6 +212,84 @@ function RenderFilter() {
   });
 
   renderProducts(filtered);
+}
+
+function renderPagination(totalPages) {
+  const controls = document.getElementById("paginationControls");
+
+  if (totalPages <= 1) {
+    controls.innerHTML = "";
+    return;
+  }
+
+  let pages = [];
+
+  if (totalPages <= 6) {
+    pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  } else if (currentPage <= 3) {
+    pages = [1, 2, 3, 4, 5, totalPages];
+  } else if (currentPage >= totalPages - 2) {
+    pages = [
+      1,
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  } else {
+    pages = [
+      1,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
+      totalPages,
+    ];
+  }
+
+  let html = `
+  <button class="pagination-btn"
+  ${currentPage === 1 ? "disabled" : ""}
+  onclick="changePage(${currentPage - 1})">
+  <i class="fa-solid fa-chevron-left"></i>
+  </button>
+  `;
+
+  pages.forEach((page, index) => {
+    if (index > 0 && page - pages[index - 1] > 1) {
+      html += `<span class="pagination-dots">...</span>`;
+    }
+
+    html += `
+      <button
+      class="pagination-btn ${page === currentPage ? "active" : ""}"
+      onclick="changePage(${page})">
+      ${page}
+      </button>
+      `;
+  });
+
+  html += `
+    <button class="pagination-btn"
+    ${currentPage === totalPages ? "disabled" : ""}
+    onclick="changePage(${currentPage + 1})">
+    <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    `;
+
+  controls.innerHTML = html;
+}
+
+function changePage(page) {
+  const totalPages = Math.ceil(currentFilteredData.length / itemsPerPage);
+
+  if (page < 1 || page > totalPages || page === currentPage) {
+    return;
+  }
+
+  currentPage = page;
+  renderProductPage();
 }
 
 function openDeleteModal(productId) {
@@ -211,37 +333,63 @@ function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   modal.style.display = "none";
 }
+let productModalMode = "add";
 
 function openProductModal(mode) {
   const form = document.getElementById("productForm");
   form.reset();
-  document.getElementById("product_id").value = "";
+  document.getElementById("product-id").value = "";
   productModalMode = mode;
   document.getElementById("modal-title").textContent =
     mode === "add" ? "Thêm sản phẩm" : "Cập nhật sản phẩm";
   openModal("productModal");
 }
 
-function submitProduct() {
+async function submitProduct(event) {
+  event.preventDefault();
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const requiredFields = [
+    ["product-name", "Tên Product không được để trống!"],
+    ["team-code", "Đội phụ trách không được để trống!"],
+    ["environment-type", "Môi trường kiểm thử không được để trống!"],
+  ];
+
+  const isRequired = requiredFields
+    .map(([id, message]) => validateRequired(id, message))
+    .every(Boolean);
+
+  if (!isRequired) return;
+  if (!isRequired) return;
+
+  const isDuplicate = await validateDuplicate(
+    "product-name",
+    supabase,
+    "product",
+    "name",
+    "product-id"
+  );
+
+  if (!isDuplicate) return;
+
   if (productModalMode === "add") {
-    addProduct();
+    await addProduct();
   } else {
-    updateProduct();
+    await updateProduct();
   }
 }
 
 async function addProduct() {
   const formData = {
-    name: removeAccents(document.getElementById("product_name").value.trim()),
-    project_code: document.getElementById("project_code").value.trim() || null,
-    project_name: document.getElementById("project_name").value.trim() || null,
-    team_code: document.getElementById("team_code").value,
-    partner_name: document.getElementById("partner_name").value.trim() || null,
-    environment_type: document.getElementById("environment_type").value,
-    main_server: document.getElementById("main_server").value.trim() || null,
-    is_live: document.getElementById("is_live").checked,
+    name: document.getElementById("product-name").value.trim(),
+    project_code: document.getElementById("project-code").value.trim() || null,
+    project_name: document.getElementById("project-name").value.trim() || null,
+    team_code: document.getElementById("team-code").value,
+    partner_name: document.getElementById("partner-name").value.trim() || null,
+    environment_type: document.getElementById("environment-type").value,
+    main_server: document.getElementById("main-server").value.trim() || null,
+    is_live: document.getElementById("is-live").checked,
     description:
-      document.getElementById("product_description").value.trim() || null,
+      document.getElementById("product-description").value.trim() || null,
   };
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -276,36 +424,34 @@ async function openUpdateModal(product_id) {
   if (productData && productData.length > 0) {
     const product = productData[0];
     openProductModal("update");
-    document.getElementById("product_id").value = product.id;
-    document.getElementById("product_name").value = product.name || "";
-    document.getElementById("partner_name").value = product.partner_name || "";
-    document.getElementById("project_name").value = product.project_name || "";
-    document.getElementById("project_code").value = product.project_code || "";
-    document.getElementById("team_code").value = product.team_code || "";
-    document.getElementById("environment_type").value =
+    document.getElementById("product-id").value = product.id;
+    document.getElementById("product-name").value = product.name || "";
+    document.getElementById("partner-name").value = product.partner_name || "";
+    document.getElementById("project-name").value = product.project_name || "";
+    document.getElementById("project-code").value = product.project_code || "";
+    document.getElementById("team-code").value = product.team_code || "";
+    document.getElementById("environment-type").value =
       product.environment_type ?? "";
-    document.getElementById("main_server").value = product.main_server || "";
-    document.getElementById("is_live").checked = Boolean(product.is_live);
-    document.getElementById("product_description").value =
+    document.getElementById("main-server").value = product.main_server || "";
+    document.getElementById("is-live").checked = Boolean(product.is_live);
+    document.getElementById("product-description").value =
       product.description || "";
-  } else {
-    console.warn("Không tìm thấy dữ liệu cho ID:", product_id);
   }
 }
 
 async function updateProduct() {
-  const product_id = document.getElementById("product_id").value;
+  const product_id = document.getElementById("product-id").value;
 
   const formData = {
-    name: document.getElementById("product_name").value,
-    partner_name: document.getElementById("partner_name").value,
-    project_name: document.getElementById("project_name").value,
-    project_code: document.getElementById("project_code").value,
-    team_code: document.getElementById("team_code").value,
-    environment_type: document.getElementById("environment_type").value,
-    main_server: document.getElementById("main_server").value,
-    is_live: document.getElementById("is_live").checked,
-    description: document.getElementById("product_description").value,
+    name: document.getElementById("product-name").value,
+    partner_name: document.getElementById("partner-name").value,
+    project_name: document.getElementById("project-name").value,
+    project_code: document.getElementById("project-code").value,
+    team_code: document.getElementById("team-code").value,
+    environment_type: document.getElementById("environment-type").value,
+    main_server: document.getElementById("main-server").value,
+    is_live: document.getElementById("is-live").checked,
+    description: document.getElementById("product-description").value,
   };
 
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

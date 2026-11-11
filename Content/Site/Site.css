@@ -72,6 +72,7 @@
   background-color: #121929;
   width: 100%;
   overflow-x: auto;
+  border-radius: 6px;
 }
 
 .site-heading {
@@ -437,23 +438,35 @@
 
 .public-ip-editor {
   display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 10px;
-  min-height: 40px;
+  flex-direction: column;
+  gap: 8px;
   padding: 8px;
   border: 1px solid #374151;
   border-radius: 6px;
   background-color: #091122;
 }
 
+.public-ip-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.public-ip-entry input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 7px 10px;
+}
+
 .public-ip-list {
   display: flex;
-  flex: 1;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  width: 100%;
 }
 
 .public-ip-badge {
@@ -553,43 +566,7 @@
 }
 
 .public-ip-add-button:hover {
-  background: transparent;
-  color: #e5e7eb;
-}
-
-.public-ip-options {
-  display: flex;
-  flex: 0 0 100%;
-  flex-direction: column;
-  gap: 6px;
-  order: 1;
-  max-height: 180px;
-  overflow-y: auto;
-  padding-top: 8px;
-  border-top: 1px solid #334155;
-}
-
-.public-ip-options[hidden] {
-  display: none;
-}
-
-.public-ip-option {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin: 0;
-  padding: 6px 8px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: #d1d5db;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.public-ip-option:hover {
-  background-color: #1e293b;
+  color: #7dd3fc;
 }
 
 .form-actions {

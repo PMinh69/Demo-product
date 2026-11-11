@@ -11,15 +11,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
     ></script>
-    <script defer src="../../common.js"></script>
-    <script defer src="../../ipPublic.js"></script>
-    <script defer src="./Site.js"></script>
+    <script src="../../common.js"></script>
+    <script src="./Site.js"></script>
   </head>
-  <body onload="fetchSite()">
+  <body>
     <div class="app-container">
       <aside class="sidebar">
         <div>
@@ -62,14 +59,22 @@
             </div>
           </div>
         </header>
-        
+
         <main id="main-content">
           <div class="site-heading-actions">
-            <button class="site-export-button" type="button" onclick="exportSitesJson()">
+            <button
+              class="site-export-button"
+              type="button"
+              onclick="exportSitesJson()"
+            >
               <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i>
               <span>Xuất JSON</span>
             </button>
-            <button class="site-add-button" type="button" onclick="openSiteModal('add')">
+            <button
+              class="site-add-button"
+              type="button"
+              onclick="openSiteModal('add')"
+            >
               <i class="fa-solid fa-plus" aria-hidden="true"></i>
               <span>Thêm site mới</span>
             </button>
@@ -123,6 +128,15 @@
               </thead>
               <tbody id="site-body"></tbody>
             </table>
+            <div class="pagination-container">
+              <div id="sitePaginationInfo" class="pagination-info">
+                Hiển thị từ 0 đến 0 của 0 bản ghi
+              </div>
+              <div
+                id="sitePaginationControls"
+                class="pagination-controls"
+              ></div>
+            </div>
           </div>
         </main>
       </div>
@@ -130,9 +144,15 @@
     <!-- Add/update site modal -->
     <div id="siteModal" class="modal-overlay" style="display: none">
       <div class="add-modal">
-        <button class="close-btn" type="button" onclick="closeModal('siteModal')">&times;</button>
+        <button
+          class="close-btn"
+          type="button"
+          onclick="closeModal('siteModal')"
+        >
+          &times;
+        </button>
         <h2 id="site-modal-title">Thêm Site</h2>
-        <form id="siteForm" onsubmit="submitSiteModal(event)">
+        <form id="siteForm" onsubmit="submitSiteModal()">
           <input type="hidden" id="site_id" name="site_id" />
           <div class="form-group">
             <label for="application_name">Tên Ứng Dụng *</label>
@@ -141,8 +161,12 @@
               id="application_name"
               name="application_name"
               placeholder="VD: PMR test..."
-              required
             />
+            <span
+              id="application-name-error"
+              class="validation-error"
+              style="display: none"
+            ></span>
           </div>
           <div class="form-group">
             <label for="url_site">URL site</label>
@@ -155,26 +179,27 @@
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>IP Public</label>
+              <label for="public-ip-input">IP Public</label>
               <div class="public-ip-editor">
+                <div class="public-ip-entry">
+                  <input
+                    type="text"
+                    id="public-ip-input"
+                    placeholder="Nhập IP public"
+                    autocomplete="off"
+                    onkeydown="handlePublicIpKeydown(event)"
+                  />
+                  <button
+                    type="button"
+                    class="public-ip-add-button"
+                    onclick="addPublicIp()"
+                    aria-label="Thêm IP public"
+                    title="Thêm IP"
+                  >
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                  </button>
+                </div>
                 <div id="ip_server_list" class="public-ip-list"></div>
-                <button
-                  type="button"
-                  id="public-ip-toggle"
-                  class="public-ip-add-button"
-                  onclick="togglePublicIpOptions()"
-                  aria-label="Thêm IP public"
-                  aria-expanded="false"
-                  aria-controls="ip_server_options"
-                  title="Thêm IP"
-                >
-                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                </button>
-                <div
-                  id="ip_server_options"
-                  class="public-ip-options"
-                  hidden
-                ></div>
               </div>
             </div>
             <div class="form-group">
@@ -234,9 +259,7 @@
             >
               Hủy bỏ
             </button>
-            <button type="submit" class="btn-submit">
-              Lưu thay đổi
-            </button>
+            <button type="submit" class="btn-submit">Lưu thay đổi</button>
           </div>
         </form>
       </div>
@@ -244,7 +267,12 @@
 
     <!-- Delete site modal -->
     <div id="deleteSiteModal" class="modal-overlay" style="display: none">
-      <div class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-site-title">
+      <div
+        class="delete-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-site-title"
+      >
         <input type="hidden" id="delete_product_id" />
         <div class="delete-modal-icon">
           <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
@@ -252,10 +280,18 @@
         <h2 id="delete-site-title">Xóa site?</h2>
         <p>Bạn có chắc chắn muốn xóa site này không?</p>
         <div class="delete-modal-actions">
-          <button type="button" class="delete-modal-cancel" onclick="closeModal('deleteSiteModal')">
+          <button
+            type="button"
+            class="delete-modal-cancel"
+            onclick="closeModal('deleteSiteModal')"
+          >
             Hủy bỏ
           </button>
-          <button type="button" class="delete-modal-confirm" onclick="confirmDeleteSite()">
+          <button
+            type="button"
+            class="delete-modal-confirm"
+            onclick="confirmDeleteSite()"
+          >
             Xóa
           </button>
         </div>
