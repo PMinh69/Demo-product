@@ -571,12 +571,12 @@
   transform: translate3d(0, 100%, 0);
 }
 
-.add-modal .status-control:has(#is_live:checked) .status-text-unchecked {
+.add-modal .status-control:has(#is-live:checked) .status-text-unchecked {
   opacity: 0;
   transform: translate3d(0, -100%, 0);
 }
 
-.add-modal .status-control:has(#is_live:checked) .status-text-checked {
+.add-modal .status-control:has(#is-live:checked) .status-text-checked {
   opacity: 1;
   transform: none;
 }
@@ -653,7 +653,7 @@
   outline-offset: 3px;
 }
 
-.add-modal .status-control:has(#is_live:checked) .status-text {
+.add-modal .status-control:has(#is-live:checked) .status-text {
   color: #10b981;
 }
 

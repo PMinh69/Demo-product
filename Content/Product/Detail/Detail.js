@@ -74,9 +74,7 @@ async function fetchProduct() {
     envMap[product.environment_type] || "Chưa chọn môi trường";
   const isActive = Boolean(product.is_live);
   const renderMetaValue = (value) =>
-    value
-      ? value
-      : `<span class="project-overview-empty">Chưa cập nhật</span>`;
+    value ? value : `<span class="project-overview-empty">Chưa cập nhật</span>`;
 
   productContainer.innerHTML = `
     <article class="product-card" id="product-card-${Number(product.id)}">
@@ -271,7 +269,9 @@ function renderPublicIps(ips) {
     removeButton.textContent = "×";
     removeButton.setAttribute("aria-label", `Xóa IP ${ip}`);
     removeButton.addEventListener("click", () => {
-      renderPublicIps(selectedPublicIps.filter((selectedIp) => selectedIp !== ip));
+      renderPublicIps(
+        selectedPublicIps.filter((selectedIp) => selectedIp !== ip),
+      );
     });
 
     badge.append(text, removeButton);
@@ -362,7 +362,10 @@ function renderSitePage() {
 
   const totalItems = currentFilteredSites.length;
   const totalPages = Math.ceil(totalItems / sitesPerPage);
-  currentSitePage = Math.max(1, Math.min(currentSitePage, Math.max(1, totalPages)));
+  currentSitePage = Math.max(
+    1,
+    Math.min(currentSitePage, Math.max(1, totalPages)),
+  );
 
   const paginationInfo = document.getElementById("sitePaginationInfo");
   const paginationControls = document.getElementById("sitePaginationControls");
@@ -446,7 +449,12 @@ function renderSitePage() {
   );
 }
 
-function renderPageControls(controls, currentPage, totalPages, changePageFunction) {
+function renderPageControls(
+  controls,
+  currentPage,
+  totalPages,
+  changePageFunction,
+) {
   if (totalPages <= 1) {
     controls.innerHTML = "";
     return;
@@ -520,7 +528,9 @@ function changeSitePage(page) {
 }
 
 function changeExistedSitePage(page) {
-  const totalPages = Math.ceil(currentFilteredExistedSites.length / sitesPerPage);
+  const totalPages = Math.ceil(
+    currentFilteredExistedSites.length / sitesPerPage,
+  );
   if (page < 1 || page > totalPages || page === currentExistedSitePage) return;
 
   currentExistedSitePage = page;
@@ -535,9 +545,7 @@ function addOption(sites) {
   ];
   ipSelect.innerHTML =
     `<option value="">IP Server</option>` +
-    uniqueIps
-      .map((ip) => `<option value="${ip}">${ip}</option>`)
-      .join("");
+    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
 }
 
 function RenderFilter() {
@@ -708,9 +716,7 @@ function addExistedIpOptions(sites) {
   ];
   ipSelect.innerHTML =
     `<option value="">IP Server</option>` +
-    uniqueIps
-      .map((ip) => `<option value="${ip}">${ip}</option>`)
-      .join("");
+    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
 }
 
 function renderExistedSites(sites) {
@@ -930,7 +936,7 @@ async function submitSiteModal(event) {
     "site",
     "application_name",
     "site-id",
-    "site"
+    "site",
   );
   if (!isDuplicate) return;
 

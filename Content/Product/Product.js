@@ -194,7 +194,7 @@ function RenderFilter() {
   const selectedTeam = document.getElementById("filter-team").value;
 
   const filtered = allProductsData.filter((product) => {
-    const name = removeAccents(String(product.name || "").toLowerCase());
+    const name = removeAccents(product.name.toLowerCase());
 
     const matchKeyword = keyword === "" || name.includes(keyword);
 
@@ -359,7 +359,6 @@ async function submitProduct(event) {
     .every(Boolean);
 
   if (!isRequired) return;
-  if (!isRequired) return;
 
   const isDuplicate = await validateDuplicate(
     "product-name",
@@ -367,7 +366,7 @@ async function submitProduct(event) {
     "product",
     "name",
     "product-id",
-    "product"
+    "product",
   );
 
   if (!isDuplicate) return;

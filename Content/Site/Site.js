@@ -14,7 +14,7 @@ const siteColumns = [
   ["status", "Trạng thái"],
   ["ip_server_local", "IP Server nội bộ"],
   ["folder_path", "Đường dẫn thư mục"],
-  ["account_info", "Tài khoản"]
+  ["account_info", "Tài khoản"],
 ];
 
 const siteTypes = {
@@ -36,7 +36,8 @@ function removeAccents(str) {
   var AccentsMap = [
     "aàảãáạăằẳẵắặâầẩẫấậ",
     "AÀẢÃÁẠĂẰẲẴẮẶÂẦẨẪẤẬ",
-    "dđ", "DĐ",
+    "dđ",
+    "DĐ",
     "eèẻẽéẹêềểễếệ",
     "EÈẺẼÉẸÊỀỂỄẾỆ",
     "iìỉĩíị",
@@ -46,10 +47,10 @@ function removeAccents(str) {
     "uùủũúụưừửữứự",
     "UÙỦŨÚỤƯỪỬỮỨỰ",
     "yỳỷỹýỵ",
-    "YỲỶỸÝỴ"
+    "YỲỶỸÝỴ",
   ];
-  for (var i=0; i<AccentsMap.length; i++) {
-    var re = new RegExp('[' + AccentsMap[i].substr(1) + ']', 'g');
+  for (var i = 0; i < AccentsMap.length; i++) {
+    var re = new RegExp("[" + AccentsMap[i].substr(1) + "]", "g");
     var char = AccentsMap[i][0];
     str = str.replace(re, char);
   }
@@ -75,17 +76,17 @@ function getPublicIps(value) {
   if (typeof value !== "string" || value.trim() === "") return [];
 
   const trimmedValue = value.trim();
-    const parsedValue = JSON.parse(trimmedValue);
-    if (Array.isArray(parsedValue)) {
-      return [
-        ...new Set(
-          parsedValue
-            .filter((ip) => ip != null)
-            .map((ip) => String(ip).trim())
-            .filter(Boolean),
-        ),
-      ];
-    }
+  const parsedValue = JSON.parse(trimmedValue);
+  if (Array.isArray(parsedValue)) {
+    return [
+      ...new Set(
+        parsedValue
+          .filter((ip) => ip != null)
+          .map((ip) => String(ip).trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
 
   return [trimmedValue];
 }
@@ -132,13 +133,10 @@ function renderPublicIpDisplay(value) {
   collapseButton.type = "button";
   collapseButton.className = "public-ip-collapse";
   collapseButton.setAttribute("onclick", "togglePublicIpDisplay(this)");
-  collapseButton.setAttribute("aria-expanded", "true");
-  collapseButton.setAttribute("aria-label", "Thu gọn danh sách IP");
   collapseButton.title = "Thu gọn";
   collapseButton.hidden = true;
   const collapseIcon = document.createElement("i");
   collapseIcon.className = "fa-solid fa-minus";
-  collapseIcon.setAttribute("aria-hidden", "true");
   collapseButton.append(collapseIcon);
   display.append(collapseButton);
 
@@ -284,7 +282,10 @@ function renderSitePage() {
 
   const totalItems = currentFilteredSites.length;
   const totalPages = Math.ceil(totalItems / sitesPerPage);
-  currentSitePage = Math.max(1, Math.min(currentSitePage, Math.max(1, totalPages)));
+  currentSitePage = Math.max(
+    1,
+    Math.min(currentSitePage, Math.max(1, totalPages)),
+  );
 
   const paginationInfo = document.getElementById("sitePaginationInfo");
   const paginationControls = document.getElementById("sitePaginationControls");
@@ -336,7 +337,10 @@ function renderSitePage() {
         badge.className = `site-status ${statusClass}`;
         const dot = document.createElement("span");
         dot.className = "status-dot";
-        badge.append(dot, document.createTextNode(siteStatuses[statusKey] ?? String(value)));
+        badge.append(
+          dot,
+          document.createTextNode(siteStatuses[statusKey] ?? String(value)),
+        );
         cell.append(badge);
       } else if (column === "url_site") {
         const link = document.createElement("a");
@@ -381,7 +385,12 @@ function renderSitePage() {
   );
 }
 
-function renderPageControls(controls, currentPage, totalPages, changePageFunction) {
+function renderPageControls(
+  controls,
+  currentPage,
+  totalPages,
+  changePageFunction,
+) {
   if (totalPages <= 1) {
     controls.innerHTML = "";
     return;
@@ -455,10 +464,9 @@ function changeSitePage(page) {
 }
 
 function RenderFilter() {
-  const keyword = removeAccents(document
-    .getElementById("site-search")
-    .value.toLowerCase()
-    .trim());
+  const keyword = removeAccents(
+    document.getElementById("site-search").value.toLowerCase().trim(),
+  );
   const selectedIp = document.getElementById("filter-ip").value;
   const selectedType = document.getElementById("filter-type").value;
   const selectedStatus = document.getElementById("filter-status").value;
@@ -549,7 +557,7 @@ async function submitSiteModal(event) {
     "site",
     "application_name",
     "site-id",
-    "site"
+    "site",
   );
 
   if (!isDuplicate) return;
