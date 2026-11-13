@@ -125,7 +125,7 @@ function renderProductPage() {
         let value = product?.[column] ?? "";
 
         if (typeof value === "string" && value.trim() === "") {
-          return `<td><span class="product-empty-value">Chưa cập nhật</span></td>`;
+          return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
         }
 
         if (column === "name") {
@@ -425,13 +425,13 @@ async function openUpdateModal(product_id) {
     const product = productData[0];
     openProductModal("update");
     document.getElementById("product-id").value = product.id;
-    document.getElementById("product-name").value = product.name || "";
+    document.getElementById("product-name").value = product.name;
     document.getElementById("partner-name").value = product.partner_name || "";
     document.getElementById("project-name").value = product.project_name || "";
     document.getElementById("project-code").value = product.project_code || "";
-    document.getElementById("team-code").value = product.team_code || "";
+    document.getElementById("team-code").value = product.team_code;
     document.getElementById("environment-type").value =
-      product.environment_type ?? "";
+      product.environment_type;
     document.getElementById("main-server").value = product.main_server || "";
     document.getElementById("is-live").checked = Boolean(product.is_live);
     document.getElementById("product-description").value =

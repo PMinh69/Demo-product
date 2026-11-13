@@ -510,6 +510,41 @@
   gap: 8px;
 }
 
+.site-account-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 6px 9px;
+  border: 1px solid #155e75;
+  border-radius: 6px;
+  background-color: #0c2635;
+  color: #7dd3fc;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.site-account-button:hover {
+  border-color: #38bdf8;
+  background-color: #123b50;
+  color: #bae6fd;
+}
+
+.site-account-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-account-button i {
+  flex: 0 0 auto;
+}
+
 .site-row-button {
   display: inline-flex;
   align-items: center;

@@ -8,13 +8,13 @@ let currentFilteredSites = [];
 const siteColumns = [
   ["application_name", "Tên ứng dụng"],
   ["url_site", "URL Site"],
-  ["ip_server", "IP Server"],
-  ["note", "Ghi chú"],
   ["type", "Loại"],
   ["status", "Trạng thái"],
+  ["ip_server", "IP Server"],
   ["ip_server_local", "IP Server nội bộ"],
   ["folder_path", "Đường dẫn thư mục"],
   ["account_info", "Tài khoản"],
+  ["note", "Ghi chú"],
 ];
 
 const siteTypes = {
@@ -93,54 +93,40 @@ function getPublicIps(value) {
 
 function renderPublicIpDisplay(value) {
   const ips = getPublicIps(value);
+
   if (ips.length === 0) {
-    const emptyIcon = document.createElement("i");
-    emptyIcon.className = "fa-solid fa-minus";
-    emptyIcon.setAttribute("aria-hidden", "true");
-    return emptyIcon;
+    return `<span class="empty-value">Chưa cập nhật</span>`;
   }
 
   const [firstIp, ...remainingIps] = ips;
-  const firstBadge = document.createElement("span");
-  firstBadge.className = "public-ip-badge";
-  firstBadge.textContent = firstIp;
 
-  if (remainingIps.length === 0) return firstBadge;
+  const badges = (items) =>
+    items.map((ip) => `<span class="public-ip-badge">${ip}</span>`).join("");
 
-  const display = document.createElement("span");
-  display.className = "public-ip-display";
-  display.append(firstBadge);
+  if (remainingIps.length === 0) return badges(ips);
 
-  const extraIps = document.createElement("span");
-  extraIps.className = "public-ip-extra";
-  extraIps.hidden = true;
-  remainingIps.forEach((ip) => {
-    const badge = document.createElement("span");
-    badge.className = "public-ip-badge";
-    badge.textContent = ip;
-    extraIps.append(badge);
-  });
-  display.append(extraIps);
-
-  const expandButton = document.createElement("button");
-  expandButton.type = "button";
-  expandButton.className = "public-ip-expand";
-  expandButton.setAttribute("onclick", "togglePublicIpDisplay(this)");
-  expandButton.textContent = `+${remainingIps.length}`;
-  display.append(expandButton);
-
-  const collapseButton = document.createElement("button");
-  collapseButton.type = "button";
-  collapseButton.className = "public-ip-collapse";
-  collapseButton.setAttribute("onclick", "togglePublicIpDisplay(this)");
-  collapseButton.title = "Thu gọn";
-  collapseButton.hidden = true;
-  const collapseIcon = document.createElement("i");
-  collapseIcon.className = "fa-solid fa-minus";
-  collapseButton.append(collapseIcon);
-  display.append(collapseButton);
-
-  return display;
+  return `
+    <span class="public-ip-display">
+      ${badges([firstIp])}
+      <span class="public-ip-extra" hidden>${badges(remainingIps)}</span>
+      <button
+        type="button"
+        class="public-ip-expand"
+        onclick="togglePublicIpDisplay(this)"
+        aria-expanded="false"
+        aria-label="Hiển thị thêm ${remainingIps.length} IP"
+      >+${remainingIps.length}</button>
+      <button
+        type="button"
+        class="public-ip-collapse"
+        onclick="togglePublicIpDisplay(this)"
+        aria-expanded="true"
+        aria-label="Thu gọn danh sách IP"
+        title="Thu gọn"
+        hidden
+      ><i class="fa-solid fa-minus"></i></button>
+    </span>
+  `;
 }
 
 function togglePublicIpDisplay(button) {
@@ -226,16 +212,12 @@ async function fetchSite() {
 }
 
 async function exportSitesJson() {
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data } = await supabase
-    .from("site")
-    .select("*")
-    .order("id", { ascending: true });
-
-  const filteredData = data.map((item) => ({
-    id: item.id,
-    pass: item.password,
-  }));
+  const filteredData = currentFilteredSites
+    .map((item) => ({
+      id: item.id,
+      pass: item.password,
+    }))
+    .sort((a, b) => a.id - b.id);
 
   const jsonString = JSON.stringify(filteredData, null, 2);
   const blob = new Blob([jsonString], {
@@ -278,105 +260,175 @@ function renderSites(sites) {
 
 function renderSitePage() {
   const siteBody = document.getElementById("site-body");
+  const paginationInfo = document.getElementById("sitePaginationInfo");
+  const paginationControls = document.getElementById("sitePaginationControls");
+
   if (!siteBody) return;
 
   const totalItems = currentFilteredSites.length;
   const totalPages = Math.ceil(totalItems / sitesPerPage);
+
   currentSitePage = Math.max(
     1,
     Math.min(currentSitePage, Math.max(1, totalPages)),
   );
 
-  const paginationInfo = document.getElementById("sitePaginationInfo");
-  const paginationControls = document.getElementById("sitePaginationControls");
-
   if (totalItems === 0) {
-    const row = document.createElement("tr");
-    const cell = document.createElement("td");
-    cell.colSpan = siteColumns.length + 1;
-    cell.style.textAlign = "center";
-    cell.textContent = "Không tìm thấy site phù hợp.";
-    row.append(cell);
-    siteBody.replaceChildren(row);
-    paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
-    paginationControls.innerHTML = "";
+    siteBody.innerHTML = `
+      <tr>
+        <td colspan="${siteColumns.length + 1}" style="text-align: center;">
+          Không tìm thấy site phù hợp.
+        </td>
+      </tr>
+    `;
+
+    if (paginationInfo) {
+      paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
+    }
+
+    if (paginationControls) {
+      paginationControls.innerHTML = "";
+    }
+
     return;
   }
 
   const startIndex = (currentSitePage - 1) * sitesPerPage;
   const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
-  const rows = currentFilteredSites.slice(startIndex, endIndex).map((site) => {
-    const row = document.createElement("tr");
 
-    siteColumns.forEach(([column]) => {
-      const cell = document.createElement("td");
-      const value = site?.[column] ?? "";
+  const currentSites = currentFilteredSites.slice(startIndex, endIndex);
 
-      if (column === "ip_server") {
-        cell.append(renderPublicIpDisplay(value));
-      } else if (value === "") {
-        const emptyIcon = document.createElement("i");
-        emptyIcon.className = "fa-solid fa-minus";
-        emptyIcon.setAttribute("aria-hidden", "true");
-        cell.append(emptyIcon);
-      } else if (column === "type") {
-        const typeKey = String(value);
-        const badge = document.createElement("span");
-        badge.className = `site-type-badge site-type-${typeKey}`;
-        badge.textContent = siteTypes[typeKey] ?? String(value);
-        cell.append(badge);
-      } else if (column === "status") {
-        const statusKey = String(value);
-        const statusClass =
-          statusKey === "1"
-            ? "site-status-run"
-            : statusKey === "0"
-              ? "site-status-pause"
-              : "site-status-stop";
-        const badge = document.createElement("span");
-        badge.className = `site-status ${statusClass}`;
-        const dot = document.createElement("span");
-        dot.className = "status-dot";
-        badge.append(
-          dot,
-          document.createTextNode(siteStatuses[statusKey] ?? String(value)),
-        );
-        cell.append(badge);
-      } else if (column === "url_site") {
-        const link = document.createElement("a");
-        link.href = String(value);
-        link.textContent = String(value);
-        cell.append(link);
-      } else {
-        cell.textContent = String(value);
-      }
+  if (paginationInfo) {
+    paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
+  }
 
-      row.append(cell);
-    });
+  siteBody.innerHTML = currentSites
+    .map(
+      (site) => `
+        <tr>
+          ${siteColumns
+            .map(([column]) => {
+              let value = site?.[column] ?? "";
 
-    const actionCell = document.createElement("td");
-    const actions = document.createElement("div");
-    actions.className = "site-table-button";
-    [
-      ["site-update", "fa-pen-to-square", "openUpdateModal"],
-      ["site-delete", "fa-trash", "deleteModal"],
-    ].forEach(([buttonClass, iconClass, action]) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `site-row-button ${buttonClass}`;
-      button.setAttribute("onclick", `${action}(${site.id})`);
-      const icon = document.createElement("i");
-      icon.className = `fa-solid ${iconClass}`;
-      icon.setAttribute("aria-hidden", "true");
-      button.append(icon);
-      actions.append(button);
-    });
-    actionCell.append(actions);
-    row.append(actionCell);
-    return row;
-  });
-  siteBody.replaceChildren(...rows);
-  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
+              if (column === "ip_server") {
+                return `
+                  <td>${renderPublicIpDisplay(value)}</td>
+                `;
+              }
+
+              if (value === "") {
+                if (column === "note") {
+                  return `
+                    <td>
+                      <span class="site-note">
+                        <span class="site-note-badge">
+                          <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
+                          <span>Ghi chú</span>
+                        </span>
+                        <span class="site-note-tooltip">Chưa cập nhật</span>
+                      </span>
+                    </td>`;
+                }
+                return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
+              }
+
+              if (column === "type") {
+                const typeKey = String(value);
+
+                value = `
+                  <span class="site-type-badge site-type-${typeKey}">
+                    ${siteTypes[typeKey] ?? value}
+                  </span>
+                `;
+              }
+              if (column === "status") {
+                const statusKey = String(value);
+
+                const statusClass =
+                  statusKey === "1"
+                    ? "site-status-run"
+                    : statusKey === "0"
+                      ? "site-status-pause"
+                      : "site-status-stop";
+
+                value = `
+                  <span class="site-status ${statusClass}">
+                    <span class="status-dot"></span>
+                    ${siteStatuses[statusKey] ?? value}
+                  </span>
+                `;
+              }
+              if (column === "url_site") {
+                value = `
+                  <a href="${value}" target="_blank" rel="noopener noreferrer">
+                    ${value}
+                  </a>
+                `;
+              }
+              if (column === "account_info") {
+                value = `
+                  <button
+                    class="site-account-button"
+                    onclick="window.location.href='getpass://${site.id}'"
+                  >
+                    <span class="site-account-value">${value}</span>
+                    <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                  </button>
+                `;
+              }
+              if (column === "note") {
+                if (value === "") {
+                  return `
+                    <td>
+                      <span class="site-note">
+                        <span class="site-note-badge">
+                          <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
+                          <span>Ghi chú</span>
+                        </span>
+                        <span class="site-note-tooltip">Chưa cập nhật</span>
+                      </span>
+                    </td>`;
+                } else {
+                  value = `
+                    <span class="site-note">
+                      <span class="site-note-badge">
+                        <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
+                        <span>Ghi chú</span>
+                      </span>
+                      <span class="site-note-tooltip">${value}</span>
+                    </span>
+                  `;
+                }
+              }
+
+              return `<td>${value}</td>`;
+            })
+            .join("")}
+
+          <td>
+            <div class="site-table-button">
+              <button
+                type="button"
+                class="site-row-button site-update"
+                onclick="openUpdateModal(${site.id})"
+              >
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+              </button>
+
+              <button
+                type="button"
+                class="site-row-button site-delete"
+                onclick="deleteModal(${site.id})"
+              >
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+
   renderPageControls(
     paginationControls,
     currentSitePage,
@@ -582,6 +634,7 @@ async function addModal() {
       ? Number(document.getElementById("status").value)
       : null,
     folder_path: document.getElementById("folder-path").value,
+    account_info: document.getElementById("account-info").value.trim(),
     note: document.getElementById("note").value,
   };
 
@@ -630,6 +683,7 @@ async function openUpdateModal(site_id) {
     document.getElementById("type").value = site.type ?? "";
     document.getElementById("status").value = site.status ?? "";
     document.getElementById("folder-path").value = site.folder_path || "";
+    document.getElementById("account-info").value = site.account_info || "";
     document.getElementById("note").value = site.note || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", site_id);
@@ -647,6 +701,7 @@ async function updateModal() {
     type: Number(document.getElementById("type").value),
     status: document.getElementById("status").value,
     folder_path: document.getElementById("folder-path").value,
+    account_info: document.getElementById("account-info").value.trim(),
     note: document.getElementById("note").value,
   };
 

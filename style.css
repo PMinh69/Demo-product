@@ -264,6 +264,11 @@ header.header {
   }
 }
 
+.empty-value {
+  color: #64748b;
+  font-style: italic;
+}
+
 .user-menu {
   position: relative;
 }

@@ -123,12 +123,13 @@
                 <tr>
                   <th>Tên ứng dụng</th>
                   <th>URL Site</th>
-                  <th>IP Server</th>
-                  <th>Ghi chú</th>
                   <th>Loại</th>
                   <th>Trạng thái</th>
+                  <th>IP Server</th>
                   <th>IP Server nội bộ</th>
                   <th>Đường dẫn thư mục</th>
+                  <th>Tài khoản</th>
+                  <th>Ghi chú</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -199,7 +200,7 @@
                         id="selectAllExistedSites"
                         class="checkbox-control"
                         onclick="toggleSelectAllExisted(this)"
-                        aria-label="Chọn tất cả site trên trang hiện tại"
+                        aria-label="Chọn tất cả site đang hiển thị"
                       />
                       <span class="checkbox"></span>
                     </label>
@@ -207,24 +208,16 @@
                 </th>
                 <th>Tên ứng dụng</th>
                 <th>URL Site</th>
-                <th>IP Public</th>
                 <th>Loại</th>
                 <th>Trạng thái</th>
-                <th>IP Local</th>
+                <th>IP Server</th>
+                <th>IP Server nội bộ</th>
                 <th>Đường dẫn thư mục</th>
+                <th>Tài khoản</th>
               </tr>
             </thead>
             <tbody id="existed-site-body"></tbody>
           </table>
-        </div>
-        <div class="pagination-container">
-          <div id="existedSitePaginationInfo" class="pagination-info">
-            Hiển thị từ 0 đến 0 của 0 bản ghi
-          </div>
-          <div
-            id="existedSitePaginationControls"
-            class="pagination-controls"
-          ></div>
         </div>
         <div class="form-actions" style="margin-top: 20px">
           <button
@@ -352,6 +345,16 @@
               id="folder-path"
               name="folder_path"
               placeholder="/var/www/html/..."
+            />
+          </div>
+          <div class="form-group">
+            <label for="account-info">Tài khoản</label>
+            <input
+              type="text"
+              id="account-info"
+              name="account_info"
+              placeholder="Nhập tài khoản"
+              autocomplete="off"
             />
           </div>
           <div class="form-group">

@@ -265,11 +265,6 @@
   font-size: 12px;
 }
 
-.product-empty-value {
-  color: #64748b;
-  font-style: italic;
-}
-
 .product-table-button {
   display: flex;
   align-items: center;

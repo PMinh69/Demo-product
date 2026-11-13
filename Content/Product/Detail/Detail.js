@@ -4,7 +4,6 @@ const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 const sitesPerPage = 15;
 let currentSitePage = 1;
 let currentFilteredSites = [];
-let currentExistedSitePage = 1;
 let currentFilteredExistedSites = [];
 const selectedExistedSiteIds = new Set();
 
@@ -117,22 +116,24 @@ async function fetchProduct() {
 const siteColumns = [
   ["application_name", "Tên ứng dụng"],
   ["url_site", "URL Site"],
-  ["ip_server", "IP Server"],
-  ["note", "Ghi chú"],
   ["type", "Loại"],
   ["status", "Trạng thái"],
+  ["ip_server", "IP Server"],
   ["ip_server_local", "IP Server nội bộ"],
   ["folder_path", "Đường dẫn thư mục"],
+  ["account_info", "Tài khoản"],
+  ["note", "Ghi chú"],
 ];
 
 const siteExistedColumns = [
   ["application_name", "Tên ứng dụng"],
   ["url_site", "URL Site"],
-  ["ip_server", "IP Server"],
   ["type", "Loại"],
   ["status", "Trạng thái"],
+  ["ip_server", "IP Server"],
   ["ip_server_local", "IP Server nội bộ"],
   ["folder_path", "Đường dẫn thư mục"],
+  ["account_info", "Tài khoản"],
 ];
 
 const siteTypes = {
@@ -149,6 +150,31 @@ const siteStatuses = {
   0: "Pause",
   "-1": "Stop",
 };
+
+function removeAccents(str) {
+  var AccentsMap = [
+    "aàảãáạăằẳẵắặâầẩẫấậ",
+    "AÀẢÃÁẠĂẰẲẴẮẶÂẦẨẪẤẬ",
+    "dđ",
+    "DĐ",
+    "eèẻẽéẹêềểễếệ",
+    "EÈẺẼÉẸÊỀỂỄẾỆ",
+    "iìỉĩíị",
+    "IÌỈĨÍỊ",
+    "oòỏõóọôồổỗốộơờởỡớợ",
+    "OÒỎÕÓỌÔỒỔỖỐỘƠỜỞỠỚỢ",
+    "uùủũúụưừửữứự",
+    "UÙỦŨÚỤƯỪỬỮỨỰ",
+    "yỳỷỹýỵ",
+    "YỲỶỸÝỴ",
+  ];
+  for (var i = 0; i < AccentsMap.length; i++) {
+    var re = new RegExp("[" + AccentsMap[i].substr(1) + "]", "g");
+    var char = AccentsMap[i][0];
+    str = str.replace(re, char);
+  }
+  return str;
+}
 
 let allSitesData = [];
 let allRelationsData = [];
@@ -170,47 +196,29 @@ function getPublicIps(value) {
   if (typeof value !== "string" || value.trim() === "") return [];
 
   const trimmedValue = value.trim();
-  try {
-    const parsedValue = JSON.parse(trimmedValue);
-    if (Array.isArray(parsedValue)) {
-      return [
-        ...new Set(
-          parsedValue
-            .filter((ip) => ip != null)
-            .map((ip) => String(ip).trim())
-            .filter(Boolean),
-        ),
-      ];
-    }
-  } catch {
-    // Existing rows may contain a single IP stored as plain text.
+  const parsedValue = JSON.parse(trimmedValue);
+  if (Array.isArray(parsedValue)) {
+    return [
+      ...new Set(
+        parsedValue
+          .filter((ip) => ip != null)
+          .map((ip) => String(ip).trim())
+          .filter(Boolean),
+      ),
+    ];
   }
-
   return [trimmedValue];
 }
 
 function renderPublicIpDisplay(value) {
   const ips = getPublicIps(value);
   if (ips.length === 0) {
-    return `<i class="fa-solid fa-minus" aria-hidden="true"></i>`;
+    return `<span class="empty-value">Chưa cập nhật</span>`;
   }
 
   const [firstIp, ...remainingIps] = ips;
-  const escapeHtml = (ip) =>
-    ip.replace(/[&<>"']/g, (character) => {
-      const entities = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      };
-      return entities[character];
-    });
   const badges = (items) =>
-    items
-      .map((ip) => `<span class="public-ip-badge">${escapeHtml(ip)}</span>`)
-      .join("");
+    items.map((ip) => `<span class="public-ip-badge">${ip}</span>`).join("");
 
   if (remainingIps.length === 0) return badges(ips);
 
@@ -233,7 +241,7 @@ function renderPublicIpDisplay(value) {
         aria-label="Thu gọn danh sách IP"
         title="Thu gọn"
         hidden
-      ><i class="fa-solid fa-minus" aria-hidden="true"></i></button>
+      ><span class="empty-value">Chưa cập nhật</span></button>
     </span>
   `;
 }
@@ -392,8 +400,8 @@ function renderSitePage() {
               return `<td>${renderPublicIpDisplay(value)}</td>`;
             }
 
-            if (column !== "note" && value === "")
-              return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
+            if (value === "")
+              return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
 
             if (column === "type") {
               const typeClass = `site-type-${value}`;
@@ -410,6 +418,18 @@ function renderSitePage() {
               value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value] ?? value}</span>`;
             }
 
+            if (column === "account_info") {
+              value = `
+                <button
+                  class="site-account-button"
+                  onclick="window.location.href='getpass://${site.id}'"
+                >
+                  <span class="site-account-value">${value}</span>
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                </button>
+              `;
+            }
+
             if (column === "url_site") {
               return `<td><a href="${value}" target="_blank">${value}</a></td>`;
             }
@@ -419,7 +439,7 @@ function renderSitePage() {
                 (item) => item.site_id === site.id,
               );
               const note = relation?.note;
-              return `<td>${note == null || note === "" ? `<i class="fa-solid fa-minus" aria-hidden="true"></i>` : note}</td>`;
+              return `<td>${note == null || note === "" ? `<span class="empty-value">Chưa cập nhật</span>` : note}</td>`;
             }
 
             return `<td>${value}</td>`;
@@ -527,16 +547,6 @@ function changeSitePage(page) {
   renderSitePage();
 }
 
-function changeExistedSitePage(page) {
-  const totalPages = Math.ceil(
-    currentFilteredExistedSites.length / sitesPerPage,
-  );
-  if (page < 1 || page > totalPages || page === currentExistedSitePage) return;
-
-  currentExistedSitePage = page;
-  renderExistedSitePage();
-}
-
 function addOption(sites) {
   const ipSelect = document.getElementById("filter-ip");
 
@@ -549,18 +559,15 @@ function addOption(sites) {
 }
 
 function RenderFilter() {
-  const keyword = document
-    .getElementById("site-search")
-    .value.toLowerCase()
-    .trim();
+  const keyword = removeAccents(
+    document.getElementById("site-search").value.toLowerCase().trim(),
+  );
   const selectedIp = document.getElementById("filter-ip").value;
   const selectedType = document.getElementById("filter-type").value;
   const selectedStatus = document.getElementById("filter-status").value;
 
   const filtered = allSitesData.filter((site) => {
-    const appName = site.application_name
-      ? String(site.application_name).toLowerCase()
-      : "";
+    const appName = removeAccents(site.application_name).toLowerCase();
     const matchKeyword = keyword === "" || appName.includes(keyword);
 
     const matchIp =
@@ -658,7 +665,7 @@ function closeModal(modalId) {
   modal.style.display = "none";
   if (modalId === "addExistedModal") {
     selectedExistedSiteIds.clear();
-    renderExistedSitePage();
+    renderExistedSiteList();
   }
 }
 
@@ -721,37 +728,22 @@ function addExistedIpOptions(sites) {
 
 function renderExistedSites(sites) {
   currentFilteredExistedSites = sites || [];
-  currentExistedSitePage = 1;
-  renderExistedSitePage();
+  renderExistedSiteList();
 }
 
-function renderExistedSitePage() {
+function renderExistedSiteList() {
   const tbody = document.getElementById("existed-site-body");
   if (!tbody) return;
   const totalCols = siteExistedColumns.length + 1;
   const totalItems = currentFilteredExistedSites.length;
-  const totalPages = Math.ceil(totalItems / sitesPerPage);
-  currentExistedSitePage = Math.max(
-    1,
-    Math.min(currentExistedSitePage, Math.max(1, totalPages)),
-  );
-  const paginationInfo = document.getElementById("existedSitePaginationInfo");
-  const paginationControls = document.getElementById(
-    "existedSitePaginationControls",
-  );
 
   if (totalItems === 0) {
     tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center; color: #9ca3af;">Không có site nào khả dụng để thêm.</td></tr>`;
-    paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
-    paginationControls.innerHTML = "";
     updateSelectAllExistedCheckbox();
     return;
   }
 
-  const startIndex = (currentExistedSitePage - 1) * sitesPerPage;
-  const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
   tbody.innerHTML = currentFilteredExistedSites
-    .slice(startIndex, endIndex)
     .map((site) => {
       const selected = selectedExistedSiteIds.has(String(site.id));
       return `
@@ -759,7 +751,7 @@ function renderExistedSitePage() {
         <td style="text-align: center;">
           <div class="checkbox-wrapper-40">
             <label>
-              <input type="checkbox" class="checkbox-control existed-site-checkbox" value="${site.id}" aria-label="Chọn site" onchange="toggleExistedSiteCheckbox(this)" ${selected ? "checked" : ""} />
+              <input type="checkbox" class="checkbox-control existed-site-checkbox" value="${site.id}" onchange="toggleExistedSiteCheckbox(this)" ${selected ? "checked" : ""} />
               <span class="checkbox"></span>
             </label>
           </div>
@@ -768,12 +760,12 @@ function renderExistedSitePage() {
           .map(([column]) => {
             let value = site?.[column] ?? "";
 
+            if (value === "")
+              return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
+
             if (column === "ip_server") {
               return `<td>${renderPublicIpDisplay(value)}</td>`;
             }
-
-            if (value === "")
-              return `<td><i class="fa-solid fa-minus" aria-hidden="true"></i></td>`;
 
             if (column === "type") {
               const typeClass = `site-type-${value}`;
@@ -790,6 +782,20 @@ function renderExistedSitePage() {
               value = `<span class="site-status ${statusClass}"><span class="status-dot"></span>${siteStatuses[value]}</span>`;
             }
 
+            if (column === "account_info") {
+              value = `
+                <button
+                  type="button"
+                  class="site-account-button"
+                  onclick="window.location.href='getpass://${site.id}'"
+                  title="Mở ứng dụng sao chép"
+                >
+                  <span class="site-account-value">${value}</span>
+                  <i class="fa-regular fa-copy" aria-hidden="true"></i>
+                </button>
+              `;
+            }
+
             if (column === "url_site") {
               return `<td><a href="${value}" target="_blank">${value}</a></td>`;
             }
@@ -802,20 +808,14 @@ function renderExistedSitePage() {
     })
     .join("");
 
-  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
-  renderPageControls(
-    paginationControls,
-    currentExistedSitePage,
-    totalPages,
-    "changeExistedSitePage",
-  );
   updateSelectAllExistedCheckbox();
 }
 
 function toggleCheckbox(row, event) {
   if (
     event.target.closest(".checkbox-wrapper-40") ||
-    event.target.closest(".public-ip-display")
+    event.target.closest(".public-ip-display") ||
+    event.target.closest(".site-account-button")
   ) {
     return;
   }
@@ -962,6 +962,7 @@ async function addModal() {
       ? Number(document.getElementById("status").value)
       : null,
     folder_path: document.getElementById("folder-path").value,
+    account_info: document.getElementById("account-info").value.trim(),
     note: document.getElementById("note").value,
   };
 
@@ -1035,15 +1036,15 @@ async function openUpdateModal(site_id) {
     );
     openSiteModal("update");
     document.getElementById("site-id").value = site.id;
-    document.getElementById("application-name").value =
-      site.application_name || "";
+    document.getElementById("application-name").value = site.application_name;
     document.getElementById("url-site").value = site.url_site || "";
     renderPublicIps(getPublicIps(site.ip_server));
     document.getElementById("ip-server-local").value =
       site.ip_server_local || "";
-    document.getElementById("type").value = site.type ?? "";
-    document.getElementById("status").value = site.status ?? "";
+    document.getElementById("type").value = site.type;
+    document.getElementById("status").value = site.status;
     document.getElementById("folder-path").value = site.folder_path || "";
+    document.getElementById("account-info").value = site.account_info || "";
     document.getElementById("note").value = relation?.note || "";
   } else {
     console.warn("Không tìm thấy dữ liệu cho ID:", site_id);
@@ -1062,6 +1063,7 @@ async function updateModal() {
     type: Number(document.getElementById("type").value),
     status: document.getElementById("status").value,
     folder_path: document.getElementById("folder-path").value,
+    account_info: document.getElementById("account-info").value.trim(),
     last_update: new Date().toISOString().split("T")[0],
   };
 
