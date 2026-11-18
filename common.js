@@ -22,7 +22,12 @@ function initAuthGuard() {
     return;
   }
 
-  document.getElementById("user-email").textContent = JSON.parse(loginData);
+  const email = JSON.parse(loginData);
+  const userEmail = document.getElementById("user-email");
+  const avatar = document.getElementById("avatar");
+
+  userEmail.textContent = email;
+  avatar.textContent = email.trim().charAt(0).toUpperCase();
 }
 
 function validateRequired(inputId, message) {
@@ -47,7 +52,14 @@ function validateRequired(inputId, message) {
   return check();
 }
 
-async function validateDuplicate(inputId, supabase, table, column, id, message) {
+async function validateDuplicate(
+  inputId,
+  supabase,
+  table,
+  column,
+  id,
+  message,
+) {
   const input = document.getElementById(inputId);
   const errorElement = document.getElementById(`${inputId}-error`);
 

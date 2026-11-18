@@ -430,6 +430,57 @@
   color: #8edcfd;
 }
 
+.site-note {
+  position: relative;
+  display: flex;
+}
+
+.site-note-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background-color: #1e293b;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: help;
+}
+
+.site-note-badge i {
+  color: #7dd3fc;
+}
+
+.site-note-tooltip {
+  position: absolute;
+  right: 0;
+  z-index: 20;
+  top: calc(100% + 8px);
+  width: max-content;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background-color: #121929;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+}
+
+.site-note:hover .site-note-tooltip {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 .site-status {
   display: inline-flex;
   align-items: center;

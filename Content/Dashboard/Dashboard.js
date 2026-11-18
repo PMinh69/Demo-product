@@ -1,6 +1,105 @@
 const SUPABASE_URL = "https://mphfczktlajxwyspbmmt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_5O9Y_YcIkJ4zqIT8ShkxeQ_41Gkfq3I";
 
+const logsColumns = [
+  ["created_at", "Thời gian"],
+  ["user_email", "Người thực hiện"],
+  ["table_name", "Tên bảng"],
+  ["action", "Hành động"],
+  ["description", "Ghi chú"],
+];
+
+const actionBadges = {
+  INSERT: { icon: "fa-plus", className: "audit-tag-insert" },
+  UPDATE: { icon: "fa-pen-to-square", className: "audit-tag-update" },
+  DELETE: { icon: "fa-trash", className: "audit-tag-delete" },
+};
+
+const tableBadges = {
+  product_site: { icon: "fa-link", className: "audit-tag-product-site" },
+  product: { icon: "fa-box", className: "audit-tag-product" },
+  site: { icon: "fa-globe", className: "audit-tag-site" },
+};
+
+async function fetchLogs() {
+  const tableHead = document.getElementById("audit-log-head");
+  const tbody = document.getElementById("audit-log-body");
+  if (!tableHead || !tbody) return;
+
+  tableHead.innerHTML = `
+    <tr>
+      ${logsColumns.map(([, label]) => `<th scope="col">${label}</th>`).join("")}
+    </tr>
+  `;
+
+  try {
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const columns = logsColumns.map(([column]) => column).join(", ");
+
+    const { data: logs, error } = await supabase
+      .from("audit_logs")
+      .select(columns)
+      .order("id", { ascending: false })
+      .limit(20);
+
+    if (error || !logs || logs.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="${logsColumns.length}" class="audit-message" style="text-align: center;">
+            ${error ? "Không thể tải nhật ký hoạt động." : "Chưa có hoạt động nào được ghi nhận."}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = logs.map((log) => `
+      <tr>
+        ${logsColumns.map(([column]) => {
+          let value = log?.[column] ?? "";
+
+          if (column === "created_at" && value) {
+            const date = new Date(value);
+            value = Number.isNaN(date.getTime())
+              ? "—"
+              : date.toLocaleString("vi-VN", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                });
+          } else if (column === "user_email") {
+            value = value ? value : "Không xác định";
+          } else if (column === "action") {
+            const action = String(value || "").toUpperCase();
+            const badge = actionBadges[action];
+            if (badge) {
+              return `<td><span class="audit-tag ${badge.className}"><i class="fa-solid ${badge.icon}" aria-hidden="true"></i>${action}</span></td>`;
+            }
+            value = action;
+          } else if (column === "table_name") {
+            const tableName = String(value || "");
+            const badge = tableBadges[tableName.toLowerCase()];
+            if (badge) {
+              return `<td><span class="audit-tag ${badge.className}"><i class="fa-solid ${badge.icon}" aria-hidden="true"></i>${tableName}</span></td>`;
+            }
+          }
+
+          return `<td>${value}</td>`;
+        }).join("")}
+      </tr>
+    `).join("");
+
+  } catch (error) {
+    console.error("Lỗi khi tải nhật ký hoạt động:", error);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="${logsColumns.length}" class="audit-message" style="text-align: center;">
+          Không thể tải nhật ký hoạt động.
+        </td>
+      </tr>
+    `;
+  }
+}
+
 async function count() {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const [
@@ -130,4 +229,5 @@ function initChart(stability = 0) {
 
 document.addEventListener("DOMContentLoaded", () => {
   count();
+  fetchLogs();
 });

@@ -341,9 +341,13 @@
   padding: 7px 12px;
   border-radius: 999px;
   background-color: #1e293b;
-  color: #7dd3fc;
+  color: #ffffff;
   font-size: 12px;
   cursor: help;
+}
+
+.site-note-badge i {
+  color: #7dd3fc;
 }
 
 .site-note-tooltip {
@@ -392,6 +396,17 @@
   border-radius: 6px;
   font-size: 14px;
   transition: 0.2s;
+}
+
+.site-copy {
+  background-color: #0c2635;
+  color: #7dd3fc;
+}
+
+.site-copy:hover {
+  background-color: #123b50;
+  color: #bae6fd;
+  cursor: pointer;
 }
 
 .site-update {

@@ -52,7 +52,7 @@
           <div class="header-user">
             <span id="user-email">Admin Lead</span>
             <div class="user-menu">
-              <button class="avatar" type="button">A</button>
+              <div class="avatar" id="avatar">A</div>
               <div class="user-dropdown">
                 <button onclick="logout()">Đăng xuất</button>
               </div>
@@ -186,6 +186,24 @@
               </div>
             </div>
           </div>
+
+          <section class="audit-card" aria-labelledby="audit-title">
+            <div class="audit-header">
+              <div>
+                <h2 class="audit-title" id="audit-title">NHẬT KÝ HOẠT ĐỘNG</h2>
+              </div>
+            </div>
+            <div class="audit-table-container">
+              <table class="audit-table">
+                <thead id="audit-log-head"></thead>
+                <tbody id="audit-log-body">
+                  <tr>
+                    <td class="audit-message" colspan="5">Đang tải nhật ký...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </main>
       </div>
     </div>

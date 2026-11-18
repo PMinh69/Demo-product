@@ -400,6 +400,32 @@ function renderSitePage() {
               return `<td>${renderPublicIpDisplay(value)}</td>`;
             }
 
+            if (column === "note") {
+              const relation = allRelationsData.find(
+                (item) => String(item.site_id) === String(site.id),
+              );
+              const note =
+                relation?.note == null || relation.note === ""
+                  ? "Chưa cập nhật"
+                  : relation.note;
+
+              return `
+                <td>
+                  <span
+                    class="site-note"
+                    tabindex="0"
+                    aria-label="Ghi chú. Rê chuột hoặc tập trung để xem nội dung"
+                  >
+                    <span class="site-note-badge">
+                      <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
+                      <span>Ghi chú</span>
+                    </span>
+                    <span class="site-note-tooltip" role="tooltip">${note}</span>
+                  </span>
+                </td>
+              `;
+            }
+
             if (value === "")
               return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
 
@@ -432,14 +458,6 @@ function renderSitePage() {
 
             if (column === "url_site") {
               return `<td><a href="${value}" target="_blank">${value}</a></td>`;
-            }
-
-            if (column === "note") {
-              const relation = allRelationsData.find(
-                (item) => item.site_id === site.id,
-              );
-              const note = relation?.note;
-              return `<td>${note == null || note === "" ? `<span class="empty-value">Chưa cập nhật</span>` : note}</td>`;
             }
 
             return `<td>${value}</td>`;
@@ -651,8 +669,6 @@ async function confirmDeleteSite() {
   document.getElementById("deleteSiteModal").style.display = "none";
   fetchSite();
   fetchExistedSite();
-
-  alert("Xóa thành công!");
 }
 
 function openModal(modalId) {

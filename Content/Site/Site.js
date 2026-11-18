@@ -409,6 +409,14 @@ function renderSitePage() {
             <div class="site-table-button">
               <button
                 type="button"
+                class="site-row-button site-copy"
+                onclick="copySiteInfo(${site.id})"
+              >
+                <i class="fa-regular fa-copy" aria-hidden="true"></i>
+              </button>
+
+              <button
+                type="button"
                 class="site-row-button site-update"
                 onclick="openUpdateModal(${site.id})"
               >
@@ -435,6 +443,33 @@ function renderSitePage() {
     totalPages,
     "changeSitePage",
   );
+}
+
+async function copySiteInfo(id) {
+  const site = allSitesData.find((item) => String(item.id) === String(id));
+
+  if (!site) {
+    console.error(`Không tìm thấy thông tin site có ID ${id}.`);
+    alert("Không tìm thấy thông tin site cần sao chép.");
+    return;
+  }
+
+  const siteInfo = siteColumns
+    .map(([column, label]) => {
+      let value = site?.[column] ?? "";
+
+      if (column === "type") {
+        value = siteTypes[value] ?? value;
+      } else if (column === "status") {
+        value = siteStatuses[value] ?? value;
+      }
+
+      return `${label}: ${value !== "" ? value : "Chưa cập nhật"};`;
+    })
+    .join("\n");
+
+  await navigator.clipboard.writeText(siteInfo);
+  alert("Đã sao chép thông tin site.");
 }
 
 function renderPageControls(
@@ -562,7 +597,6 @@ async function confirmDeleteSite() {
 
   if (siteError) {
     alert("Lỗi khi xóa site:", siteError);
-    alert("Xóa thất bại!");
     return;
   }
 

@@ -248,6 +248,117 @@ body {
   position: relative;
 }
 
+/* AUDIT LOG */
+.audit-card {
+  margin-top: 20px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+
+.audit-header {
+  margin-bottom: 16px;
+}
+
+.audit-title {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.audit-subtitle {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.audit-table-container {
+  overflow-x: auto;
+  border-radius: 6px;
+  background: #121929;
+}
+
+.audit-table {
+  width: 100%;
+  min-width: 760px
+}
+
+.audit-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.65);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.audit-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.45);
+  color: #cbd5e1;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.audit-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.audit-table tbody tr:hover {
+  background: #111827;
+}
+
+.audit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.audit-tag-insert {
+  background: #022c22;
+  border-color: #10b981;
+  color: #34d399;
+}
+
+.audit-tag-update {
+  background: #082f49;
+  border-color: #0ea5e9;
+  color: #38bdf8;
+}
+
+.audit-tag-delete {
+  background: #4c0519;
+  border-color: #f43f5e;
+  color: #fb7185;
+}
+
+.audit-tag-product-site {
+  background: #451a03;
+  border-color: #d97706;
+  color: #fcd34d;
+}
+
+.audit-tag-product {
+  background: #1e1b4b;
+  border-color: #6366f1;
+  color: #a5b4fc;
+}
+
+.audit-tag-site {
+  background: #042f2e;
+  border-color: #14b8a6;
+  color: #5eead4;
+}
+
 /* ENDPOINT CARD SPECIFICS */
 .endpoint-main {
   display: flex;
