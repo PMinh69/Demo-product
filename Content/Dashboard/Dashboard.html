@@ -92,7 +92,31 @@
 
               <div class="squad-section">
                 <span class="section-subtitle">PHÂN BỐ KỸ THUẬT (SQUADS)</span>
-                <div class="squad-list" id="squad-list"></div>
+                <div class="squad-list" id="squad-list">
+                  <span class="squad-item squad-team-4">
+                    <i class="dot dot-team-4"></i>
+                    Team4
+                    <strong></strong>
+                  </span>
+
+                  <span class="squad-item squad-team-5">
+                    <i class="dot dot-team-5"></i>
+                    Team5
+                    <strong></strong>
+                  </span>
+
+                  <span class="squad-item squad-team-6">
+                    <i class="dot dot-team-6"></i>
+                    Team6
+                    <strong></strong>
+                  </span>
+
+                  <span class="squad-item squad-team-mscscrum">
+                    <i class="dot dot-team-mscscrum"></i>
+                    Mscscrum
+                    <strong></strong>
+                  </span>
+                </div>
               </div>
 
               <a href="../Product/Product.html" class="link-action">
@@ -103,7 +127,9 @@
               <div class="chart-section">
                 <div class="chart-header">
                   <span>ĐỘ ỔN ĐỊNH 7 NGÀY QUA</span>
-                  <span class="text-highlight" id="stability-average">0% Avg</span>
+                  <span class="text-highlight" id="stability-average"
+                    >0% Avg</span
+                  >
                 </div>
                 <div class="chart-wrapper">
                   <canvas id="stabilityChart"></canvas>
@@ -114,9 +140,7 @@
             <div class="card card-right">
               <div class="card-header">
                 <div class="title-with-sync">
-                  <span class="card-title"
-                    >SITES GIÁM SÁT</span
-                  >
+                  <span class="card-title">SITES GIÁM SÁT</span>
                 </div>
               </div>
 
@@ -175,12 +199,12 @@
                   <div class="status-header">
                     <i class="dot dot-red"></i> STOPPED
                   </div>
-                  <div class="status-number text-red" id="stopped-sites">
-                    0
-                  </div>
+                  <div class="status-number text-red" id="stopped-sites">0</div>
                   <div class="status-desc">
                     <span>Sự cố</span>
-                    <span class="status-percent text-red" id="stopped-percent">0%</span>
+                    <span class="status-percent text-red" id="stopped-percent"
+                      >0%</span
+                    >
                   </div>
                 </div>
               </div>
@@ -199,19 +223,13 @@
                 />
               </div>
               <div class="audit-selects">
-                <select
-                  id="audit-table-filter"
-                  onchange="filterLogs()"
-                >
+                <select id="audit-table-filter" onchange="filterLogs()">
                   <option value="">Tên bảng</option>
                   <option value="product">Product</option>
                   <option value="site">Site</option>
                   <option value="product_site">Product Site</option>
                 </select>
-                <select
-                  id="audit-action-filter"
-                  onchange="filterLogs()"
-                >
+                <select id="audit-action-filter" onchange="filterLogs()">
                   <option value="">Hành động</option>
                   <option value="INSERT">INSERT</option>
                   <option value="UPDATE">UPDATE</option>
@@ -224,7 +242,9 @@
                 <thead id="audit-log-head"></thead>
                 <tbody id="audit-log-body">
                   <tr>
-                    <td class="audit-message" colspan="5">Đang tải nhật ký...</td>
+                    <td class="audit-message" colspan="5">
+                      Đang tải nhật ký...
+                    </td>
                   </tr>
                 </tbody>
               </table>

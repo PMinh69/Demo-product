@@ -167,6 +167,12 @@ async function count() {
 
   const productData = products || [];
   const siteData = sites || [];
+  const counts = {
+    team4: 0,
+    team5: 0,
+    team6: 0,
+    mscscrum: 0,
+  };
   const total = productData.length;
   const active = productData.filter(
     (product) => product.is_live === true,
@@ -198,7 +204,18 @@ async function count() {
   document.querySelector(".segment-paused").style.width = `${pausedPercent}%`;
   document.querySelector(".segment-stopped").style.width = `${stoppedPercent}%`;
 
-  renderSquads(productData);
+  productData.forEach((product) => {
+    const team = String(product.team_code || "")
+      .trim()
+      .toLowerCase();
+    counts[team]++;
+  });
+
+  document.querySelector(".squad-team-4 strong").textContent = counts.team4;
+  document.querySelector(".squad-team-5 strong").textContent = counts.team5;
+  document.querySelector(".squad-team-6 strong").textContent = counts.team6;
+  document.querySelector(".squad-team-mscscrum strong").textContent =
+    counts.mscscrum;
   initChart(Number(activePercent));
 }
 
@@ -207,32 +224,6 @@ async function logout() {
   await supabase.auth.signOut();
   localStorage.removeItem("loginData");
   window.location.href = "../../Login.html";
-}
-
-function renderSquads(products) {
-  const squadList = document.getElementById("squad-list");
-  if (!squadList) return;
-
-  const counts = products.reduce((result, product) => {
-    const teamCode = String(product.team_code || "").trim();
-    const squad =
-      teamCode.toLowerCase() === "mscrum"
-        ? "Chưa phân đội"
-        : teamCode || "Chưa phân đội";
-    result[squad] = (result[squad] || 0) + 1;
-    return result;
-  }, {});
-
-  squadList.innerHTML = Object.entries(counts)
-    .map(
-      ([squad, count], index) => `
-        <span class="squad-item">
-          <i class="dot ${index % 3 === 0 ? "dot-cyan" : index % 3 === 1 ? "dot-purple" : "dot-gray"}"></i>
-          ${squad}
-          <strong>${count}</strong>
-        </span>`,
-    )
-    .join("");
 }
 
 function initChart(stability = 0) {

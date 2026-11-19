@@ -161,28 +161,22 @@
   overflow-wrap: anywhere;
 }
 
-.project-team-1 {
-  border-color: #334155;
-  background-color: #0f172a;
-  color: #94a3b8;
-}
-
-.project-team-2 {
-  border-color: #3730a3;
-  background-color: #1e1b4b;
-  color: #a5b4fc;
-}
-
-.project-team-3 {
-  border-color: #1d4ed8;
-  background-color: #172554;
-  color: #93c5fd;
-}
-
 .project-team-4 {
   border-color: #0f766e;
   background-color: #042f2e;
   color: #5eead4;
+}
+
+.project-team-5 {
+  border-color: #a16207;
+  background-color: #422006;
+  color: #fcd34d;
+}
+
+.project-team-6 {
+  border-color: #be123c;
+  background-color: #4c0519;
+  color: #fda4af;
 }
 
 .project-team-mscrum {
@@ -302,7 +296,6 @@
 .site-selects select {
   width: 100%;
   height: 42px;
-  box-sizing: border-box;
   border: 1px solid #334155;
   border-radius: 6px;
   background-color: #091122;
@@ -675,32 +668,53 @@
 
 .existed-site-toolbar {
   margin: 15px 52px 15px 15px;
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 
-.existed-site-search {
+.existed-site-toolbar .existed-site-search {
+  flex: 90%;
   margin-bottom: 0;
 }
 
 .existed-site-selects {
   display: flex;
+  flex: 50%;
   gap: 12px;
 }
 
-.existed-site-selects select {
+.existed-site-toolbar .existed-site-search input,
+.existed-site-toolbar .existed-site-selects select {
+  width: 100%;
   height: 42px;
-  padding: 0 12px;
   border: 1px solid #334155;
   border-radius: 6px;
   background-color: #091122;
   color: #ffffff;
-  outline: none;
 }
 
-.existed-site-selects select:focus {
+.existed-site-toolbar .existed-site-search input {
+  padding: 0 14px;
+}
+
+.existed-site-toolbar .existed-site-selects select {
+  padding: 0 34px 0 12px;
+}
+
+.existed-site-toolbar .existed-site-search input:focus,
+.existed-site-toolbar .existed-site-selects select:focus {
   border-color: #7dd3fc;
+  outline: none;
+  background-color: #091122;
+}
+
+@media (max-width: 900px) {
+  .existed-site-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .add-existed-modal .close-btn {

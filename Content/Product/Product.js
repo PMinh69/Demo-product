@@ -22,10 +22,9 @@ const environmentTypes = {
 };
 
 const teamBadgeClasses = {
-  team1: "product-team-1",
-  team2: "product-team-2",
-  team3: "product-team-3",
   team4: "product-team-4",
+  team5: "product-team-5",
+  team6: "product-team-6",
   mscscrum: "product-team-mscscrum",
 };
 

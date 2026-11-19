@@ -26,10 +26,9 @@ let siteModalMode = "add";
 let currentProduct = null;
 
 const productTeamBadgeClasses = {
-  team1: "project-team-1",
-  team2: "project-team-2",
-  team3: "project-team-3",
   team4: "project-team-4",
+  team5: "project-team-5",
+  team6: "project-team-6",
   mscscrum: "project-team-mscrum",
 };
 
@@ -72,8 +71,6 @@ async function fetchProduct() {
   const environmentLabel =
     envMap[product.environment_type] || "Chưa chọn môi trường";
   const isActive = Boolean(product.is_live);
-  const renderMetaValue = (value) =>
-    value ? value : `<span class="project-overview-empty">Chưa cập nhật</span>`;
 
   productContainer.innerHTML = `
     <article class="product-card" id="product-card-${Number(product.id)}">
@@ -102,7 +99,7 @@ async function fetchProduct() {
         </span>
         <span class="project-meta-item">
           <strong>Đội phụ trách:</strong>
-          ${teamCode ? `<span class="project-team-badge ${teamClass}">${teamCode}</span>` : `<span class="project-overview-empty">Chưa cập nhật</span>`}
+          <span class="project-team-badge ${teamClass}">${teamCode}</span>
         </span>
         <span class="project-meta-item">
           <strong>Server:</strong>
@@ -334,8 +331,6 @@ async function fetchSite() {
     return (relationB?.id ?? 0) - (relationA?.id ?? 0);
   });
 
-  addOption(allSitesData);
-
   if (allSitesData.length === 0) {
     renderSites([]);
     return;
@@ -516,22 +511,10 @@ function changeSitePage(page) {
   renderSitePage();
 }
 
-function addOption(sites) {
-  const ipSelect = document.getElementById("filter-ip");
-
-  const uniqueIps = [
-    ...new Set(sites.flatMap((site) => getPublicIps(site.ip_server))),
-  ];
-  ipSelect.innerHTML =
-    `<option value="">IP Server</option>` +
-    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
-}
-
 function RenderFilter() {
   const keyword = removeAccents(
     document.getElementById("site-search").value.toLowerCase().trim(),
   );
-  const selectedIp = document.getElementById("filter-ip").value;
   const selectedType = document.getElementById("filter-type").value;
   const selectedStatus = document.getElementById("filter-status").value;
 
@@ -539,14 +522,12 @@ function RenderFilter() {
     const appName = removeAccents(site.application_name).toLowerCase();
     const matchKeyword = keyword === "" || appName.includes(keyword);
 
-    const matchIp =
-      selectedIp === "" || getPublicIps(site.ip_server).includes(selectedIp);
     const matchType =
       selectedType === "" || String(site.type) === String(selectedType);
     const matchStatus =
       selectedStatus === "" || String(site.status) === String(selectedStatus);
 
-    return matchKeyword && matchIp && matchType && matchStatus;
+    return matchKeyword && matchType && matchStatus;
   });
 
   renderSites(filtered);
@@ -556,7 +537,6 @@ function RenderFilter() {
   )
     .toLowerCase()
     .trim();
-  const existedIp = document.getElementById("existed-filter-ip")?.value || "";
   const existedType =
     document.getElementById("existed-filter-type")?.value || "";
   const existedStatus =
@@ -573,14 +553,12 @@ function RenderFilter() {
       .toLowerCase();
     const matchKeyword =
       existedKeyword === "" || searchableText.includes(existedKeyword);
-    const matchIp =
-      existedIp === "" || getPublicIps(site.ip_server).includes(existedIp);
     const matchType =
       existedType === "" || String(site.type) === String(existedType);
     const matchStatus =
       existedStatus === "" || String(site.status) === String(existedStatus);
 
-    return matchKeyword && matchIp && matchType && matchStatus;
+    return matchKeyword && matchType && matchStatus;
   });
 
   renderExistedSites(filteredExisted);
@@ -677,20 +655,7 @@ async function fetchExistedSite() {
   selectedExistedSiteIds.forEach((siteId) => {
     if (!availableSiteIds.has(siteId)) selectedExistedSiteIds.delete(siteId);
   });
-  addExistedIpOptions(availableSites);
   renderExistedSites(availableSites);
-}
-
-function addExistedIpOptions(sites) {
-  const ipSelect = document.getElementById("existed-filter-ip");
-  if (!ipSelect) return;
-
-  const uniqueIps = [
-    ...new Set(sites.flatMap((site) => getPublicIps(site.ip_server))),
-  ];
-  ipSelect.innerHTML =
-    `<option value="">IP Server</option>` +
-    uniqueIps.map((ip) => `<option value="${ip}">${ip}</option>`).join("");
 }
 
 function renderExistedSites(sites) {

@@ -229,28 +229,22 @@
   overflow-wrap: anywhere;
 }
 
-.product-team-1 {
-  border-color: #334155;
-  background-color: #0f172a;
-  color: #94a3b8;
-}
-
-.product-team-2 {
-  border-color: #3730a3;
-  background-color: #1e1b4b;
-  color: #a5b4fc;
-}
-
-.product-team-3 {
-  border-color: #1d4ed8;
-  background-color: #172554;
-  color: #93c5fd;
-}
-
 .product-team-4 {
   border-color: #0f766e;
   background-color: #042f2e;
   color: #5eead4;
+}
+
+.product-team-5 {
+  border-color: #a16207;
+  background-color: #422006;
+  color: #fcd34d;
+}
+
+.product-team-6 {
+  border-color: #be123c;
+  background-color: #4c0519;
+  color: #fda4af;
 }
 
 .product-team-mscscrum {
