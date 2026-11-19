@@ -230,18 +230,13 @@ function renderPublicIpDisplay(value) {
         type="button"
         class="public-ip-expand"
         onclick="togglePublicIpDisplay(this)"
-        aria-expanded="false"
-        aria-label="Hiển thị thêm ${remainingIps.length} IP"
       >+${remainingIps.length}</button>
       <button
         type="button"
         class="public-ip-collapse"
         onclick="togglePublicIpDisplay(this)"
-        aria-expanded="true"
-        aria-label="Thu gọn danh sách IP"
-        title="Thu gọn"
         hidden
-      ><span class="empty-value">Chưa cập nhật</span></button>
+      ><i class="fa-solid fa-minus"></i></button>
     </span>
   `;
 }
@@ -256,35 +251,26 @@ function togglePublicIpDisplay(button) {
   extraIps.hidden = !expanded;
   expandButton.hidden = expanded;
   collapseButton.hidden = !expanded;
-  expandButton.setAttribute("aria-expanded", String(expanded));
-  collapseButton.setAttribute("aria-expanded", String(expanded));
 }
 
 function renderPublicIps(ips) {
   const list = document.getElementById("ip-server-list");
   selectedPublicIps = getPublicIps(ips);
-  list.replaceChildren();
 
-  selectedPublicIps.forEach((ip) => {
-    const badge = document.createElement("span");
-    badge.className = "public-ip-badge";
-    const text = document.createElement("span");
-    text.textContent = ip;
-
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.className = "public-ip-remove-button";
-    removeButton.textContent = "×";
-    removeButton.setAttribute("aria-label", `Xóa IP ${ip}`);
-    removeButton.addEventListener("click", () => {
-      renderPublicIps(
-        selectedPublicIps.filter((selectedIp) => selectedIp !== ip),
-      );
-    });
-
-    badge.append(text, removeButton);
-    list.append(badge);
-  });
+  list.innerHTML = selectedPublicIps
+    .map(
+      (ip, index) => `
+    <span class="public-ip-badge">
+      <span>${ip}</span>
+      <button
+        type="button"
+        class="public-ip-remove-button"
+        onclick="removePublicIp(${index})"
+      >×</button>
+    </span>
+  `,
+    )
+    .join("");
 }
 
 function addPublicIp() {
@@ -479,77 +465,42 @@ function renderSitePage() {
     .join("");
 
   paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
-  renderPageControls(
-    paginationControls,
-    currentSitePage,
-    totalPages,
-    "changeSitePage",
-  );
+  renderPagination(paginationControls, totalPages);
 }
 
-function renderPageControls(
-  controls,
-  currentPage,
-  totalPages,
-  changePageFunction,
-) {
+function renderPagination(controls, totalPages) {
   if (totalPages <= 1) {
     controls.innerHTML = "";
     return;
   }
 
-  let pages = [];
-
-  if (totalPages <= 6) {
-    pages = Array.from({ length: totalPages }, (_, index) => index + 1);
-  } else if (currentPage <= 3) {
-    pages = [1, 2, 3, 4, 5, totalPages];
-  } else if (currentPage >= totalPages - 2) {
-    pages = [
-      1,
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  } else {
-    pages = [
-      1,
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      currentPage + 2,
-      totalPages,
-    ];
-  }
-
   let html = `
-    <button class="pagination-btn"
-      ${currentPage === 1 ? "disabled" : ""}
-      onclick="${changePageFunction}(${currentPage - 1})">
+    <button
+      class="pagination-btn"
+      ${currentSitePage === 1 ? "disabled" : ""}
+      onclick="changeSitePage(${currentSitePage - 1})"
+    >
       <i class="fa-solid fa-chevron-left"></i>
     </button>
   `;
 
-  pages.forEach((page, index) => {
-    if (index > 0 && page - pages[index - 1] > 1) {
-      html += `<span class="pagination-dots">...</span>`;
-    }
-
+  for (let page = 1; page <= totalPages; page++) {
     html += `
       <button
-        class="pagination-btn ${page === currentPage ? "active" : ""}"
-        onclick="${changePageFunction}(${page})">
+        class="pagination-btn ${page === currentSitePage ? "active" : ""}"
+        onclick="changeSitePage(${page})"
+      >
         ${page}
       </button>
     `;
-  });
+  }
 
   html += `
-    <button class="pagination-btn"
-      ${currentPage === totalPages ? "disabled" : ""}
-      onclick="${changePageFunction}(${currentPage + 1})">
+    <button
+      class="pagination-btn"
+      ${currentSitePage === totalPages ? "disabled" : ""}
+      onclick="changeSitePage(${currentSitePage + 1})"
+    >
       <i class="fa-solid fa-chevron-right"></i>
     </button>
   `;

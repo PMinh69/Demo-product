@@ -65,10 +65,7 @@ function getPublicIps(value) {
   if (Array.isArray(value)) {
     return [
       ...new Set(
-        value
-          .filter((ip) => ip != null)
-          .map((ip) => String(ip).trim())
-          .filter(Boolean),
+        value.filter((ip) => ip != null).map((ip) => String(ip).trim()),
       ),
     ];
   }
@@ -80,10 +77,7 @@ function getPublicIps(value) {
   if (Array.isArray(parsedValue)) {
     return [
       ...new Set(
-        parsedValue
-          .filter((ip) => ip != null)
-          .map((ip) => String(ip).trim())
-          .filter(Boolean),
+        parsedValue.filter((ip) => ip != null).map((ip) => String(ip).trim()),
       ),
     ];
   }
@@ -93,13 +87,11 @@ function getPublicIps(value) {
 
 function renderPublicIpDisplay(value) {
   const ips = getPublicIps(value);
-
   if (ips.length === 0) {
     return `<span class="empty-value">Chưa cập nhật</span>`;
   }
 
   const [firstIp, ...remainingIps] = ips;
-
   const badges = (items) =>
     items.map((ip) => `<span class="public-ip-badge">${ip}</span>`).join("");
 
@@ -113,16 +105,11 @@ function renderPublicIpDisplay(value) {
         type="button"
         class="public-ip-expand"
         onclick="togglePublicIpDisplay(this)"
-        aria-expanded="false"
-        aria-label="Hiển thị thêm ${remainingIps.length} IP"
       >+${remainingIps.length}</button>
       <button
         type="button"
         class="public-ip-collapse"
         onclick="togglePublicIpDisplay(this)"
-        aria-expanded="true"
-        aria-label="Thu gọn danh sách IP"
-        title="Thu gọn"
         hidden
       ><i class="fa-solid fa-minus"></i></button>
     </span>
@@ -139,30 +126,26 @@ function togglePublicIpDisplay(button) {
   extraIps.hidden = !expanded;
   expandButton.hidden = expanded;
   collapseButton.hidden = !expanded;
-  expandButton.setAttribute("aria-expanded", String(expanded));
-  collapseButton.setAttribute("aria-expanded", String(expanded));
 }
 
 function renderPublicIps(ips) {
   const list = document.getElementById("ip-server-list");
   selectedPublicIps = getPublicIps(ips);
-  const badges = selectedPublicIps.map((ip, index) => {
-    const badge = document.createElement("span");
-    badge.className = "public-ip-badge";
-    const label = document.createElement("span");
-    label.textContent = ip;
-    badge.append(label);
 
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.className = "public-ip-remove-button";
-    removeButton.setAttribute("onclick", `removePublicIp(${index})`);
-    removeButton.setAttribute("aria-label", `Xóa IP ${ip}`);
-    removeButton.textContent = "×";
-    badge.append(removeButton);
-    return badge;
-  });
-  list.replaceChildren(...badges);
+  list.innerHTML = selectedPublicIps
+    .map(
+      (ip, index) => `
+    <span class="public-ip-badge">
+      <span>${ip}</span>
+      <button
+        type="button"
+        class="public-ip-remove-button"
+        onclick="removePublicIp(${index})"
+      >×</button>
+    </span>
+  `,
+    )
+    .join("");
 }
 
 function addPublicIp() {
@@ -207,7 +190,6 @@ async function fetchSite() {
   }
 
   allSitesData = siteData || [];
-  addOption(allSitesData);
   renderSites(allSitesData);
 }
 
@@ -234,24 +216,6 @@ async function exportSitesJson() {
   URL.revokeObjectURL(url);
 }
 
-function addOption(sites) {
-  const ipSelect = document.getElementById("filter-ip");
-  const uniqueIps = [
-    ...new Set(sites.flatMap((site) => getPublicIps(site.ip_server))),
-  ];
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "IP Server";
-  const options = [placeholder];
-  uniqueIps.forEach((ip) => {
-    const option = document.createElement("option");
-    option.value = ip;
-    option.textContent = ip;
-    options.push(option);
-  });
-  ipSelect.replaceChildren(...options);
-}
-
 function renderSites(sites) {
   currentFilteredSites = sites || [];
   currentSitePage = 1;
@@ -268,10 +232,10 @@ function renderSitePage() {
   const totalItems = currentFilteredSites.length;
   const totalPages = Math.ceil(totalItems / sitesPerPage);
 
-  currentSitePage = Math.max(
-    1,
-    Math.min(currentSitePage, Math.max(1, totalPages)),
-  );
+  const startIndex = (currentSitePage - 1) * sitesPerPage;
+  const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
+
+  const currentSites = currentFilteredSites.slice(startIndex, endIndex);
 
   if (totalItems === 0) {
     siteBody.innerHTML = `
@@ -282,167 +246,109 @@ function renderSitePage() {
       </tr>
     `;
 
-    if (paginationInfo) {
-      paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
-    }
-
-    if (paginationControls) {
-      paginationControls.innerHTML = "";
-    }
-
+    paginationInfo.textContent = "Hiển thị từ 0 đến 0 của 0 bản ghi";
+    paginationControls.innerHTML = "";
     return;
   }
 
-  const startIndex = (currentSitePage - 1) * sitesPerPage;
-  const endIndex = Math.min(startIndex + sitesPerPage, totalItems);
-
-  const currentSites = currentFilteredSites.slice(startIndex, endIndex);
-
-  if (paginationInfo) {
-    paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
-  }
+  paginationInfo.textContent = `Hiển thị từ ${startIndex + 1} đến ${endIndex} của ${totalItems} bản ghi`;
 
   siteBody.innerHTML = currentSites
     .map(
       (site) => `
-        <tr>
-          ${siteColumns
-            .map(([column]) => {
-              let value = site?.[column] ?? "";
+    <tr>
+      ${siteColumns
+        .map(([column]) => {
+          let value = site?.[column] ?? "";
 
-              if (column === "ip_server") {
-                return `
-                  <td>${renderPublicIpDisplay(value)}</td>
-                `;
-              }
+          if (column === "ip_server") {
+            return `<td>${renderPublicIpDisplay(value)}</td>`;
+          }
 
-              if (value === "") {
-                if (column === "note") {
-                  return `
-                    <td>
-                      <span class="site-note">
-                        <span class="site-note-badge">
-                          <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-                          <span>Ghi chú</span>
-                        </span>
-                        <span class="site-note-tooltip">Chưa cập nhật</span>
-                      </span>
-                    </td>`;
-                }
-                return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
-              }
+          if (value === "") {
+            return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
+          }
 
-              if (column === "type") {
-                const typeKey = String(value);
+          if (column === "type") {
+            const typeKey = String(value);
+            value = `
+            <span class="site-type-badge site-type-${typeKey}">
+              ${siteTypes[typeKey] ?? value}
+            </span>
+          `;
+          }
 
-                value = `
-                  <span class="site-type-badge site-type-${typeKey}">
-                    ${siteTypes[typeKey] ?? value}
-                  </span>
-                `;
-              }
-              if (column === "status") {
-                const statusKey = String(value);
+          if (column === "status") {
+            const statusKey = String(value);
+            const statusClass =
+              statusKey === "1"
+                ? "site-status-run"
+                : statusKey === "0"
+                  ? "site-status-pause"
+                  : "site-status-stop";
 
-                const statusClass =
-                  statusKey === "1"
-                    ? "site-status-run"
-                    : statusKey === "0"
-                      ? "site-status-pause"
-                      : "site-status-stop";
+            value = `
+            <span class="site-status ${statusClass}">
+              <span class="status-dot"></span>
+              ${siteStatuses[statusKey] ?? value}
+            </span>
+          `;
+          }
 
-                value = `
-                  <span class="site-status ${statusClass}">
-                    <span class="status-dot"></span>
-                    ${siteStatuses[statusKey] ?? value}
-                  </span>
-                `;
-              }
-              if (column === "url_site") {
-                value = `
-                  <a href="${value}" target="_blank" rel="noopener noreferrer">
-                    ${value}
-                  </a>
-                `;
-              }
-              if (column === "account_info") {
-                value = `
-                  <button
-                    class="site-account-button"
-                    onclick="window.location.href='getpass://${site.id}'"
-                  >
-                    <span class="site-account-value">${value}</span>
-                    <i class="fa-regular fa-copy" aria-hidden="true"></i>
-                  </button>
-                `;
-              }
-              if (column === "note") {
-                if (value === "") {
-                  return `
-                    <td>
-                      <span class="site-note">
-                        <span class="site-note-badge">
-                          <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-                          <span>Ghi chú</span>
-                        </span>
-                        <span class="site-note-tooltip">Chưa cập nhật</span>
-                      </span>
-                    </td>`;
-                } else {
-                  value = `
-                    <span class="site-note">
-                      <span class="site-note-badge">
-                        <i class="fa-regular fa-note-sticky" aria-hidden="true"></i>
-                        <span>Ghi chú</span>
-                      </span>
-                      <span class="site-note-tooltip">${value}</span>
-                    </span>
-                  `;
-                }
-              }
+          if (column === "url_site") {
+            value = `<a href="${value}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+          }
 
-              return `<td>${value}</td>`;
-            })
-            .join("")}
+          if (column === "account_info") {
+            value = `
+            <button class="site-account-button"
+              onclick="window.location.href='getpass://${site.id}'">
+              <span class="site-account-value">${value}</span>
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          `;
+          }
 
-          <td>
-            <div class="site-table-button">
-              <button
-                type="button"
-                class="site-row-button site-copy"
-                onclick="copySiteInfo(${site.id})"
-              >
-                <i class="fa-regular fa-copy" aria-hidden="true"></i>
-              </button>
+          if (column === "note") {
+            value = `
+            <span class="site-note">
+              <span class="site-note-badge">
+                <i class="fa-regular fa-note-sticky"></i>
+                <span>Ghi chú</span>
+              </span>
+              <span class="site-note-tooltip">${value}</span>
+            </span>
+          `;
+          }
 
-              <button
-                type="button"
-                class="site-row-button site-update"
-                onclick="openUpdateModal(${site.id})"
-              >
-                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-              </button>
+          return `<td>${value}</td>`;
+        })
+        .join("")}
 
-              <button
-                type="button"
-                class="site-row-button site-delete"
-                onclick="deleteModal(${site.id})"
-              >
-                <i class="fa-solid fa-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `,
+      <td>
+        <div class="site-table-button">
+          <button type="button" class="site-row-button site-copy"
+            onclick="copySiteInfo(${site.id})">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+
+          <button type="button" class="site-row-button site-update"
+            onclick="openUpdateModal(${site.id})">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+
+          <button type="button" class="site-row-button site-delete"
+            onclick="deleteModal(${site.id})">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `,
     )
     .join("");
 
-  renderPageControls(
-    paginationControls,
-    currentSitePage,
-    totalPages,
-    "changeSitePage",
-  );
+  renderPagination(paginationControls, totalPages);
 }
 
 async function copySiteInfo(id) {
@@ -472,69 +378,34 @@ async function copySiteInfo(id) {
   alert("Đã sao chép thông tin site.");
 }
 
-function renderPageControls(
-  controls,
-  currentPage,
-  totalPages,
-  changePageFunction,
-) {
+function renderPagination(controls, totalPages) {
   if (totalPages <= 1) {
     controls.innerHTML = "";
     return;
   }
 
-  let pages = [];
-
-  if (totalPages <= 6) {
-    pages = Array.from({ length: totalPages }, (_, index) => index + 1);
-  } else if (currentPage <= 3) {
-    pages = [1, 2, 3, 4, 5, totalPages];
-  } else if (currentPage >= totalPages - 2) {
-    pages = [
-      1,
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  } else {
-    pages = [
-      1,
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      currentPage + 2,
-      totalPages,
-    ];
-  }
-
   let html = `
     <button class="pagination-btn"
-      ${currentPage === 1 ? "disabled" : ""}
-      onclick="${changePageFunction}(${currentPage - 1})">
+      ${currentSitePage === 1 ? "disabled" : ""}
+      onclick="changeSitePage(${currentSitePage - 1})">
       <i class="fa-solid fa-chevron-left"></i>
     </button>
   `;
 
-  pages.forEach((page, index) => {
-    if (index > 0 && page - pages[index - 1] > 1) {
-      html += `<span class="pagination-dots">...</span>`;
-    }
-
+  for (let page = 1; page <= totalPages; page++) {
     html += `
       <button
-        class="pagination-btn ${page === currentPage ? "active" : ""}"
-        onclick="${changePageFunction}(${page})">
+        class="pagination-btn ${page === currentSitePage ? "active" : ""}"
+        onclick="changeSitePage(${page})">
         ${page}
       </button>
     `;
-  });
+  }
 
   html += `
     <button class="pagination-btn"
-      ${currentPage === totalPages ? "disabled" : ""}
-      onclick="${changePageFunction}(${currentPage + 1})">
+      ${currentSitePage === totalPages ? "disabled" : ""}
+      onclick="changeSitePage(${currentSitePage + 1})">
       <i class="fa-solid fa-chevron-right"></i>
     </button>
   `;
@@ -554,20 +425,17 @@ function RenderFilter() {
   const keyword = removeAccents(
     document.getElementById("site-search").value.toLowerCase().trim(),
   );
-  const selectedIp = document.getElementById("filter-ip").value;
   const selectedType = document.getElementById("filter-type").value;
   const selectedStatus = document.getElementById("filter-status").value;
 
   const filtered = allSitesData.filter((site) => {
     const name = String(site.application_name || "").toLowerCase();
     const matchKeyword = keyword === "" || name.includes(keyword);
-    const matchIp =
-      selectedIp === "" || getPublicIps(site.ip_server).includes(selectedIp);
     const matchType = selectedType === "" || String(site.type) === selectedType;
     const matchStatus =
       selectedStatus === "" || String(site.status) === selectedStatus;
 
-    return matchKeyword && matchIp && matchType && matchStatus;
+    return matchKeyword && matchType && matchStatus;
   });
 
   renderSites(filtered);

@@ -89,23 +89,22 @@ function renderProducts(products) {
 function renderProductPage() {
   const productBody = document.getElementById("product-body");
   const paginationInfo = document.getElementById("paginationInfo");
+  const paginationControls = document.getElementById("paginationControls");
 
   const totalItems = currentFilteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  currentPage = Math.max(1, Math.min(currentPage, Math.max(1, totalPages)));
-
   if (totalItems === 0) {
     productBody.innerHTML = `
-    <tr>
-    <td colspan="${productColumns.length + 1}" style="text-align: center;">
-    Không tìm thấy sản phẩm phù hợp.
-    </td>
-    </tr>
+      <tr>
+        <td colspan="${productColumns.length + 1}" style="text-align: center;">
+          Không tìm thấy sản phẩm phù hợp.
+        </td>
+      </tr>
     `;
 
     paginationInfo.textContent = "Hiển thị 0 đến 0 của 0 bản ghi";
-    document.getElementById("paginationControls").innerHTML = "";
+    paginationControls.innerHTML = "";
     return;
   }
 
@@ -119,68 +118,73 @@ function renderProductPage() {
   productBody.innerHTML = currentProducts
     .map(
       (product) => `
-    <tr>
-    ${productColumns
-      .map(([column]) => {
-        let value = product?.[column] ?? "";
+        <tr>
+          ${productColumns
+            .map(([column]) => {
+              let value = product?.[column] ?? "";
 
-        if (typeof value === "string" && value.trim() === "") {
-          return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
-        }
+              if (typeof value === "string" && value.trim() === "") {
+                return `<td><span class="empty-value">Chưa cập nhật</span></td>`;
+              }
 
-        if (column === "name") {
-          value = `<span class="product-name">${value}</span>`;
-        } else if (column === "team_code") {
-          const teamClass =
-            teamBadgeClasses[String(value).trim().toLowerCase()] || "";
-          value = `<span class="product-entity-tag ${teamClass}">${value}</span>`;
-        } else if (column === "partner_name") {
-          value = `<span class="product-entity-tag">${value}</span>`;
-        } else if (column === "main_server") {
-          value = `<span class="product-server">${value}</span>`;
-        } else if (column === "is_live") {
-          const statusClass =
-            value === true ? "badge-active" : "badge-inactive";
-          const statusText = value === true ? "Active" : "Inactive";
+              if (column === "name") {
+                value = `<span class="product-name">${value}</span>`;
+              } else if (column === "team_code") {
+                const teamClass =
+                  teamBadgeClasses[String(value).trim().toLowerCase()] || "";
 
-          value = `
-              <span class="product-status ${statusClass}">
-              <span class="status-dot"></span>${statusText}
-              </span>`;
-        } else if (column === "environment_type") {
-          value = `<span class="env-badge env-${value}">
-              ${environmentTypes[value] ?? value}
-              </span>`;
-        }
+                value = `<span class="product-entity-tag ${teamClass}">${value}</span>`;
+              } else if (column === "partner_name") {
+                value = `<span class="product-entity-tag">${value}</span>`;
+              } else if (column === "main_server") {
+                value = `<span class="product-server">${value}</span>`;
+              } else if (column === "is_live") {
+                const statusClass =
+                  value === true ? "badge-active" : "badge-inactive";
 
-        return `<td>${value}</td>`;
-      })
-      .join("")}
-          
+                const statusText = value === true ? "Active" : "Inactive";
+
+                value = `
+                  <span class="product-status ${statusClass}">
+                    <span class="status-dot"></span>${statusText}
+                  </span>
+                `;
+              } else if (column === "environment_type") {
+                value = `
+                  <span class="env-badge env-${value}">
+                    ${environmentTypes[value] ?? value}
+                  </span>
+                `;
+              }
+
+              return `<td>${value}</td>`;
+            })
+            .join("")}
+
           <td>
-          <div class="product-table-button">
-          <button class="product-row-button product-detail"
-          onclick="productDetail(${product.id})">
-          <i class="fa-solid fa-eye" aria-hidden="true"></i>
-            </button>
+            <div class="product-table-button">
+              <button class="product-row-button product-detail"
+                onclick="productDetail(${product.id})">
+                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+              </button>
 
-            <button class="product-row-button product-update"
-            onclick="openUpdateModal(${product.id})">
-            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
-            </button>
-            
-            <button class="product-row-button product-delete"
-            onclick="openDeleteModal(${product.id})">
-            <i class="fa-solid fa-trash" aria-hidden="true"></i>
-            </button>
+              <button class="product-row-button product-update"
+                onclick="openUpdateModal(${product.id})">
+                <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+              </button>
+
+              <button class="product-row-button product-delete"
+                onclick="openDeleteModal(${product.id})">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
             </div>
-            </td>
-            </tr>
-            `,
+          </td>
+        </tr>
+      `,
     )
     .join("");
 
-  renderPagination(totalPages);
+  renderPagination(paginationControls, totalPages);
 }
 
 function RenderFilter() {
@@ -214,69 +218,37 @@ function RenderFilter() {
   renderProducts(filtered);
 }
 
-function renderPagination(totalPages) {
-  const controls = document.getElementById("paginationControls");
-
+function renderPagination(controls, totalPages) {
   if (totalPages <= 1) {
     controls.innerHTML = "";
     return;
   }
 
-  let pages = [];
-
-  if (totalPages <= 6) {
-    pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  } else if (currentPage <= 3) {
-    pages = [1, 2, 3, 4, 5, totalPages];
-  } else if (currentPage >= totalPages - 2) {
-    pages = [
-      1,
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  } else {
-    pages = [
-      1,
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      currentPage + 2,
-      totalPages,
-    ];
-  }
-
   let html = `
-  <button class="pagination-btn"
-  ${currentPage === 1 ? "disabled" : ""}
-  onclick="changePage(${currentPage - 1})">
-  <i class="fa-solid fa-chevron-left"></i>
-  </button>
+    <button class="pagination-btn"
+      ${currentPage === 1 ? "disabled" : ""}
+      onclick="changePage(${currentPage - 1})">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
   `;
 
-  pages.forEach((page, index) => {
-    if (index > 0 && page - pages[index - 1] > 1) {
-      html += `<span class="pagination-dots">...</span>`;
-    }
-
+  for (let page = 1; page <= totalPages; page++) {
     html += `
       <button
-      class="pagination-btn ${page === currentPage ? "active" : ""}"
-      onclick="changePage(${page})">
-      ${page}
+        class="pagination-btn ${page === currentPage ? "active" : ""}"
+        onclick="changePage(${page})">
+        ${page}
       </button>
-      `;
-  });
+    `;
+  }
 
   html += `
     <button class="pagination-btn"
-    ${currentPage === totalPages ? "disabled" : ""}
-    onclick="changePage(${currentPage + 1})">
-    <i class="fa-solid fa-chevron-right"></i>
+      ${currentPage === totalPages ? "disabled" : ""}
+      onclick="changePage(${currentPage + 1})">
+      <i class="fa-solid fa-chevron-right"></i>
     </button>
-    `;
+  `;
 
   controls.innerHTML = html;
 }

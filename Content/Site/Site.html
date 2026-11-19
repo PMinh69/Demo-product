@@ -89,9 +89,6 @@
               />
             </div>
             <div class="site-selects">
-              <select id="filter-ip" onchange="RenderFilter()">
-                <option value="">IP Server</option>
-              </select>
               <select id="filter-type" onchange="RenderFilter()">
                 <option value="">Loại</option>
                 <option value="1">Website</option>
@@ -185,15 +182,12 @@
                     type="text"
                     id="public-ip-input"
                     placeholder="Nhập IP public"
-                    autocomplete="off"
                     onkeydown="handlePublicIpKeydown(event)"
                   />
                   <button
                     type="button"
                     class="public-ip-add-button"
                     onclick="addPublicIp()"
-                    aria-label="Thêm IP public"
-                    title="Thêm IP"
                   >
                     <i class="fa-solid fa-plus" aria-hidden="true"></i>
                   </button>
